@@ -7,6 +7,7 @@
     "dev": "concurrently -k -n api,web \"node server/index.js\" \"vite\"",
     "api": "node server/index.js",
     "web": "vite",
+    "dev:static": "vite --mode static",
     "build": "vite build",
     "test:api": "node server/smoke.test.js"
   },

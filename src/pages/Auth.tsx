@@ -9,8 +9,8 @@ export default function Auth({ mode }: { mode: 'login' | 'signup' }) {
   const from = (useLocation().state as { from?: string } | null)?.from || '/dashboard'
   const toast = useToast()
   const [f, setF] = useState({ name: '', email: '', password: '' })
-  const submit = useAction(async () => { await signIn(mode, f); nav(from, { replace: true }) })
-  const google = useAction(async () => { await signIn('login', { email: 'demo@promanai.dev', password: 'google' }); nav('/dashboard', { replace: true }) })
+  const submit = useAction(async () => { await signIn(mode, f); nav(mode === 'signup' ? '/dashboard' : from, { replace: true }) })
+  const google = useAction(async () => { await signIn('google'); nav('/dashboard', { replace: true }) })
   const on = (e: FormEvent) => { e.preventDefault(); submit.run() }
   return (
     <div className="auth-wrap">
@@ -28,7 +28,7 @@ export default function Auth({ mode }: { mode: 'login' | 'signup' }) {
         ) : (
           <p className="small muted">New accounts start unverified: you can look around, but starting an interview needs email verification. <Link to="/login">Log in instead</Link></p>
         )}
-        <p className="small muted">Prototype: any email and password signs you in.</p>
+        <p className="small muted">Prototype: log in with demo@promanai.dev and demo-pass, use Google, or sign up for a new account.</p>
       </form>
     </div>
   )

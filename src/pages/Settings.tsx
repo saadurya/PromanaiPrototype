@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, post } from '../api'
+import { api, post, PROTOTYPE_TOOLS } from '../api'
 import { useAuth } from '../auth'
 import { ErrorBox, Modal, PageHead, useAction, useToast } from '../ui'
 
@@ -25,15 +25,15 @@ export default function Settings() {
           <div className="row"><button className="btn" onClick={() => save.run()} disabled={save.busy || !name.trim()}>Save changes</button><button className="btn ghost" onClick={() => toast('Verification link sent to your new email (prototype)')}>Change email</button><button className="btn ghost" onClick={() => toast('Password change form (prototype)')}>Change password</button></div>
           <ErrorBox error={save.error} />
         </section>
-        <section className="card stack">
+        {PROTOTYPE_TOOLS && <section className="card stack">
           <h2>Prototype tools</h2>
           <p className="muted">Trigger the failure screens on demand. These are only here so you can see the fallbacks.</p>
           <div className="row"><button className="btn ghost sm" onClick={() => flag({ busyNext: true }, 'Next AI question will fail once')}>Make next AI question fail</button><button className="btn ghost sm" onClick={() => flag({ feedbackFailNext: true }, 'Next report will fail once')}>Make next report fail</button></div>
           <button className="btn ghost sm" style={{ justifySelf: 'start' }} onClick={() => post('/_dev/reset').then(() => { toast('Sample data reset'); signOut(); nav('/login') })}>Reset all sample data</button>
-        </section>
+        </section>}
         <section className="card stack" style={{ borderColor: '#f3bccd' }}>
           <h2>Delete account</h2>
-          <p className="muted">Removes your account, interviews, transcripts, reports and ratings. This cannot be undone.</p>
+          <p className="muted">Removes your account, interviews, transcripts, reports, ratings and anything you posted, plus drafts saved on this device. This cannot be undone. Download any reports you want to keep first.</p>
           <button className="btn danger" style={{ justifySelf: 'start' }} onClick={() => setOpen(true)}>Delete my account</button>
         </section>
       </div>

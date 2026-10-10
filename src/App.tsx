@@ -9,6 +9,7 @@ import Live from './pages/Live'
 import Report from './pages/Report'
 import History from './pages/History'
 import Settings from './pages/Settings'
+import VerifyEmail from './pages/VerifyEmail'
 import { VoiceTest, AiTest } from './pages/Sandbox'
 import Hub from './options/Hub'
 import Industry from './options/Industry'
@@ -71,6 +72,7 @@ export default function App() {
       <ToastProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route element={<Guest />}>
             <Route path="/login" element={<Auth mode="login" />} />
             <Route path="/signup" element={<Auth mode="signup" />} />
