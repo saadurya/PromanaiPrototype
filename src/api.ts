@@ -26,10 +26,18 @@ export const post = <T = any>(p: string, b: unknown = {}) => api<T>('POST', p, b
 export const engine = <T = any>(body: Record<string, unknown>) => post<T>('/interview-engine', body)
 
 export type User = { id: string; name: string; email: string; verified: boolean }
-export type Msg = { seq: number; role: 'interviewer' | 'candidate'; content: string; skipped: boolean }
-export type Session = { id: string; level: string; category: string; difficulty: string; industry: string | null; status: string; feedback_status: string; timer_remaining_ms: number; skips_used: number; end_reason: string | null; created_at: string; size_bytes: number; rating: { rating: number; comment: string } | null; has_feedback: boolean }
-export type Feedback = { overall_score: number; explanation: string; competency_scores: { name: string; score: number; explanation: string }[]; strengths: string[]; improvement_areas: string[]; suggestions: string[]; model: string }
+export type Msg = { seq: number; role: 'interviewer' | 'candidate'; content: string; skipped: boolean; kind?: 'clarify'; area?: string }
+export type Session = { id: string; level: string; category: string; categories?: string[]; current_category?: string; difficulty: string; industry: string | null; industry_name?: string | null; opening?: string | null; clarifications?: number; status: string; feedback_status: string; timer_remaining_ms: number; skips_used: number; end_reason: string | null; created_at: string; size_bytes: number; rating: { rating: number; comment: string } | null; has_feedback: boolean }
+// a feedback point, with the candidate's own words (verbatim) that earned it, or where it was missing
+export type FeedbackPoint = { text: string; quote?: string; cut?: boolean; note?: string }
+export type AnswerFeedback = { seq: number; question: string; answer?: string; area?: string; skipped: boolean; verdict?: 'Strong' | 'Solid' | 'Needs work'; good?: (FeedbackPoint | string)[]; missing?: (FeedbackPoint | string)[]; tip?: string }
+export type Feedback = { overall_score: number; band?: string; answers?: AnswerFeedback[]; explanation: string; competency_scores: { name: string; score: number; explanation: string; evidence?: { quote: string; cut?: boolean; seq: number; qn: number } | null }[]; strengths: string[]; improvement_areas: string[]; suggestions: string[]; model: string }
 
-export const CATEGORY_LABELS: Record<string, string> = { 'product-sense': 'Product Sense', execution: 'Execution', metrics: 'Metrics', strategy: 'Strategy', behavioral: 'Behavioral' }
+export const CATEGORY_LABELS: Record<string, string> = { 'product-sense': 'Product Sense', execution: 'Execution', metrics: 'Metrics', strategy: 'Strategy', behavioral: 'Behavioral', 'ai-product': 'AI Product Sense' }
+// An interview can cover several focus areas; `category` is the first one, kept for older records
+export const sessionCategories = (s: Pick<Session, 'category' | 'categories'>) => (s.categories?.length ? s.categories : [s.category])
+export const catLabel = (s: Pick<Session, 'category' | 'categories'>) => sessionCategories(s).map((c) => CATEGORY_LABELS[c]).join(' + ')
+// the "How do you use AI?" practice is named for what it is, not by its focus area
+export const interviewTitle = (s: Pick<Session, 'category' | 'categories' | 'opening'>) => (s.opening === 'ai-usage' ? 'AI question practice' : catLabel(s))
 export const fmtBytes = (n: number) => (n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB')
 export const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })

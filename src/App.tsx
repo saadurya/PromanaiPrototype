@@ -1,6 +1,6 @@
-import { NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
-import { Spinner, ToastProvider } from './ui'
+import { Spinner, ToastProvider, useCandidateView } from './ui'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
@@ -9,24 +9,33 @@ import Live from './pages/Live'
 import Report from './pages/Report'
 import History from './pages/History'
 import Settings from './pages/Settings'
+import StudyPlan from './pages/StudyPlan'
+import Disclaimer from './pages/Disclaimer'
 import { VoiceTest, AiTest } from './pages/Sandbox'
 import Hub from './options/Hub'
-import Industry from './options/Industry'
 import Experiences from './options/Experiences'
 import PeerMocks from './options/PeerMocks'
-import Roadmap from './options/Roadmap'
-import AiTools from './options/AiTools'
+import AiTools, { AiToolDetail } from './pages/AiTools'
 
 const OPTIONS = [
-  { to: '/ideas/industry', n: 1, label: 'Industry selection' },
-  { to: '/ideas/experiences', n: 2, label: 'Interview experiences' },
-  { to: '/ideas/peer-mocks', n: 3, label: 'Peer mock interviews' },
-  { to: '/ideas/roadmap', n: 4, label: 'Resources and roadmap' },
-  { to: '/ideas/ai-tools', n: 5, label: 'PM AI tools' },
+  { to: '/ideas/experiences', n: 1, label: 'Interview experiences' },
+  { to: '/ideas/peer-mocks', n: 2, label: 'Peer mock interviews' },
 ]
 
 function Shell() {
   const { user, signOut } = useAuth()
+  const [candidate] = useCandidateView()
+  // Distraction-free interview: no menu while the clock runs, only a way out that keeps the interview open
+  if (useLocation().pathname === '/interview/live') return (
+    <div className="focus-shell">
+      <header className="focus-bar">
+        <span className="brand" style={{ padding: 0 }}><i />ProManAI</span>
+        <span className="small">Focus mode: the menu is hidden during your interview.</span>
+        <Link className="btn sm ghost" to="/dashboard" title="Your interview stays open. Resume it from the dashboard.">Leave for now</Link>
+      </header>
+      <main className="main focus-main"><Outlet /></main>
+    </div>
+  )
   return (
     <div className="shell">
       <aside className="side">
@@ -36,19 +45,29 @@ function Shell() {
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
           <NavLink to="/history">History</NavLink>
+          <NavLink to="/study-plan">Study plan</NavLink>
+          <NavLink to="/ai-tools">AI tools</NavLink>
           <NavLink to="/voice-test">Voice test</NavLink>
-          <NavLink to="/ai-test">AI test</NavLink>
-          <div className="nav-group">Ideas to compare</div>
-          <NavLink to="/ideas" end>Overview</NavLink>
-          {OPTIONS.map((o) => <NavLink key={o.to} to={o.to}><span className="opt-n">{o.n}</span>{o.label}</NavLink>)}
+          {!candidate && <NavLink to="/ai-test">AI test</NavLink>}
+          {!candidate && (<>
+            <div className="nav-group">Ideas to compare</div>
+            <NavLink to="/ideas" end>Overview</NavLink>
+            {OPTIONS.map((o) => <NavLink key={o.to} to={o.to}><span className="opt-n">{o.n}</span>{o.label}</NavLink>)}
+          </>)}
           <div className="nav-group">Account</div>
           <NavLink to="/settings">Settings</NavLink>
         </nav>
-        <div className="side-foot"><b>{user?.name}</b>{user?.email}<br /><a href="/" onClick={(e) => { e.preventDefault(); signOut() }} style={{ color: '#d6f03b' }}>Sign out</a></div>
+        <div className="side-foot"><b>{user?.name}</b>{user?.email}<br /><a href="/" onClick={(e) => { e.preventDefault(); signOut() }} style={{ color: '#d6f03b' }}>Sign out</a> · <Link to="/disclaimer" style={{ color: '#d6f03b' }}>Disclaimer</Link></div>
       </aside>
       <main className="main"><Outlet /></main>
     </div>
   )
+}
+
+// old /ideas/ai-tools links keep working
+function ToolRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/ai-tools/${id}`} replace />
 }
 
 function Private({ verified }: { verified?: boolean }) {
@@ -71,6 +90,7 @@ export default function App() {
       <ToastProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
           <Route element={<Guest />}>
             <Route path="/login" element={<Auth mode="login" />} />
             <Route path="/signup" element={<Auth mode="signup" />} />
@@ -80,13 +100,17 @@ export default function App() {
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/study-plan" element={<StudyPlan />} />
             <Route path="/voice-test" element={<VoiceTest />} />
             <Route path="/ideas" element={<Hub />} />
-            <Route path="/ideas/industry" element={<Industry />} />
+            <Route path="/ideas/industry" element={<Navigate to="/interview/setup" replace />} />
             <Route path="/ideas/experiences" element={<Experiences />} />
             <Route path="/ideas/peer-mocks" element={<PeerMocks />} />
-            <Route path="/ideas/roadmap" element={<Roadmap />} />
-            <Route path="/ideas/ai-tools" element={<AiTools />} />
+            <Route path="/ideas/roadmap" element={<Navigate to="/study-plan" replace />} />
+            <Route path="/ai-tools" element={<AiTools />} />
+            <Route path="/ai-tools/:id" element={<AiToolDetail />} />
+            <Route path="/ideas/ai-tools" element={<Navigate to="/ai-tools" replace />} />
+            <Route path="/ideas/ai-tools/:id" element={<ToolRedirect />} />
           </Route>
           <Route element={<Private verified />}>
             <Route path="/interview/setup" element={<Setup />} />

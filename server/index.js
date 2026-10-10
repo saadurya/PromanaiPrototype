@@ -3,13 +3,16 @@
 import http from 'node:http'
 import { fileURLToPath } from 'node:url'
 import * as S from './seed.js'
+import * as T from './aiTools.js'
 
 const PORT = process.env.PORT || 8787
 const TOTAL_MS = 20 * 60 * 1000
 const MAX_SKIPS = 2
+const QUESTIONS_PER_AREA = 3 // opening + 2 follow-ups, then the next chosen area
 const MAX_GAP_MS = 30_000 // doc: at most ~30s lost per gap
 const STORAGE_LIMIT = 5 * 1024 * 1024
-const RATE = { engine: 20, feedback: 6 } // per minute
+const RATE = { engine: 60, feedback: 6 } // per minute; clock checks (status, heartbeat) are not counted
+const MAX_CLARIFY = 4 // clarifying questions per interview
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const rid = () => Math.random().toString(36).slice(2, 9)
 
@@ -21,9 +24,11 @@ function fresh() {
     myAvailability: new Set(),
     bookings: [],
     resourceVotes: {},
-    toolVotes: {},
-    toolReports: {},
+    toolReviews: structuredClone(T.TOOL_REVIEWS),
+    reviewHelpful: new Set(),
+    reviewReported: new Set(),
     experienceHelpful: new Set(),
+    plan: null, // the saved study plan (demo: in memory only)
     flags: { busyNext: false, feedbackFailNext: false },
     hits: { engine: [], feedback: [] },
   }
@@ -43,7 +48,7 @@ export function createApp() {
 
   const bytes = (i) => i.messages.reduce((n, m) => n + Buffer.byteLength(m.content), 0) + 600
   const storageUsed = () => db.interviews.reduce((n, i) => n + i.size_bytes, 0)
-  const publicSession = (i) => ({ ...i, messages: undefined, feedback: undefined, has_feedback: !!i.feedback })
+  const publicSession = (i) => ({ ...i, messages: undefined, feedback: undefined, has_feedback: !!i.feedback, industry_name: S.INDUSTRIES.find((x) => x.id === i.industry)?.name ?? null })
   const active = () => db.interviews.find((i) => i.status === 'in_progress')
 
   // Server-side clock. Charges elapsed time since last tick, capped per gap.
@@ -73,19 +78,41 @@ export function createApp() {
   }
 
   // Mock "Gemini": picks an unseen question based on simple features of the last answer.
+  // With several focus areas, it moves to the next area after QUESTIONS_PER_AREA questions or once that area's share of the clock is used.
   function nextQuestion(i, opts = {}) {
-    const asked = new Set(i.messages.filter((m) => m.role === 'interviewer').map((m) => m.content))
-    const lastAnswer = [...i.messages].reverse().find((m) => m.role === 'candidate')?.content || ''
+    const opening = (cat) => S.QUESTION_TEMPLATES[cat](ctxFor(i.industry)) + S.HARD_SUFFIX[i.difficulty]
+    if (opts.opening) return i.opening === 'ai-usage' ? S.AI_USAGE_QUESTION : opening(i.categories[0])
+    const questions = i.messages.filter((m) => m.role === 'interviewer' && m.kind !== 'clarify')
+    const k = i.categories.indexOf(i.current_category)
+    const areaUsed = TOTAL_MS - i.timer_remaining_ms >= (TOTAL_MS / i.categories.length) * (k + 1)
+    if (k < i.categories.length - 1 && i.timer_remaining_ms >= 180_000 && (questions.length - i.area_start >= QUESTIONS_PER_AREA || areaUsed)) {
+      i.current_category = i.categories[k + 1]
+      i.area_start = questions.length
+      return `Let's switch to the ${S.CATEGORIES[i.current_category].label} part of the interview. ${opening(i.current_category)}`
+    }
+    const cat = i.current_category
+    const asked = new Set(questions.map((m) => m.content))
+    const lastAnswer = [...i.messages].reverse().find((m) => m.role === 'candidate' && m.kind !== 'clarify')?.content || ''
     const words = lastAnswer.trim().split(/\s+/).filter(Boolean).length
     const pool = []
-    if (opts.opening) return S.QUESTION_TEMPLATES[i.category](ctxFor(i.industry)) + S.HARD_SUFFIX[i.difficulty]
     if (i.timer_remaining_ms < 180_000) pool.push('We are short on time. In two sentences, what is your single most important recommendation?')
     if (words < 25) pool.push(S.GENERIC_FOLLOWUPS.shortAnswer)
-    if (!/user|customer|segment/i.test(lastAnswer) && i.category === 'product-sense') pool.push(S.GENERIC_FOLLOWUPS.noUser)
-    if (!/metric|measure|kpi|rate/i.test(lastAnswer) && i.category !== 'behavioral') pool.push(S.GENERIC_FOLLOWUPS.noMetric)
+    if (!/user|customer|segment/i.test(lastAnswer) && cat === 'product-sense') pool.push(S.GENERIC_FOLLOWUPS.noUser)
+    if (!/metric|measure|kpi|rate/i.test(lastAnswer) && cat !== 'behavioral') pool.push(S.GENERIC_FOLLOWUPS.noMetric)
     if (!/trade|instead|cost|versus/i.test(lastAnswer)) pool.push(S.GENERIC_FOLLOWUPS.noTradeoff)
-    pool.push(...S.FOLLOWUPS[i.category])
+    pool.push(...S.FOLLOWUPS[cat])
     return pool.find((q) => !asked.has(q)) || 'Is there anything you would like to add before we wrap up?'
+  }
+
+  // Mock interviewer answers to clarifying questions: give a reasonable assumption, never the answer
+  function clarifyReply(text) {
+    const t = text.toLowerCase()
+    if (/\b(user|who|segment|customer|persona)\b/.test(t)) return 'Good question. Pick the user segment you think matters most, and tell me why you chose it.'
+    if (/\b(goal|objective|success|why|aim)\b/.test(t)) return 'Assume the company cares most about long-term engagement. If you would choose a different goal, say so and explain why.'
+    if (/\b(data|metric|analytics|numbers?)\b/.test(t)) return 'Assume you have standard product analytics and can run A/B tests, but there is no budget for new research.'
+    if (/\b(time|deadline|team|engineers?|resources?|budget)\b/.test(t)) return 'Assume a small team of four engineers and one quarter.'
+    if (/\b(market|competitor|country|region)\b/.test(t)) return 'Assume one main market and two well-funded competitors.'
+    return 'Good question. Make a reasonable assumption, say it out loud, and carry on.'
   }
 
   function guardOwner(i) {
@@ -93,7 +120,7 @@ export function createApp() {
   }
 
   async function engine(body) {
-    if (limited('engine')) return err(429, 'rate_limited', 'You are going too quickly. Wait a few seconds and try again.', true)
+    if (!['status', 'heartbeat'].includes(body.action) && limited('engine')) return err(429, 'rate_limited', 'You are going too quickly. Wait a few seconds and try again.', true)
     const a = body.action
     if (a === 'status') {
       const i = active()
@@ -105,14 +132,18 @@ export function createApp() {
       if (!db.user?.verified) return err(403, 'email_unverified', 'Verify your email to start an interview.')
       if (active()) return err(409, 'already_running', 'You already have an interview in progress.')
       if (storageUsed() > STORAGE_LIMIT - 20_000) return err(409, 'storage_full', 'Storage is full. Download and delete your oldest interview first.')
-      const { level, category, difficulty, industry } = body
-      if (!['APM', 'PM'].includes(level) || !S.CATEGORIES[category] || !['easy', 'medium', 'hard'].includes(difficulty)) return err(400, 'invalid_input', 'Choose a level, category and difficulty.')
+      const { level, difficulty, industry } = body
+      const picked = Array.isArray(body.categories) ? body.categories : body.category ? [body.category] : []
+      const categories = Object.keys(S.CATEGORIES).filter((c) => picked.includes(c)) // canonical order, no duplicates
+      if (!['APM', 'PM'].includes(level) || !categories.length || picked.some((c) => !S.CATEGORIES[c]) || !['easy', 'medium', 'hard'].includes(difficulty)) return err(400, 'invalid_input', 'Choose a level, at least one focus area and a difficulty.')
       if (industry && !S.INDUSTRIES.some((x) => x.id === industry)) return err(400, 'invalid_input', 'Unknown industry.')
-      const i = { id: 'i' + rid(), level, category, difficulty, industry: industry || null, status: 'in_progress', feedback_status: 'none', timer_remaining_ms: TOTAL_MS, skips_used: 0, end_reason: null, created_at: new Date().toISOString(), size_bytes: 0, rating: null, feedback_attempts: 0, messages: [], last_tick: Date.now(), feedback: null }
+      // the "How do you use AI?" opening only applies to a behavioral-only interview
+      const openingVariant = body.opening === 'ai-usage' && categories.length === 1 && categories[0] === 'behavioral' ? 'ai-usage' : null
+      const i = { id: 'i' + rid(), level, category: categories[0], categories, current_category: categories[0], area_start: 0, opening: openingVariant, clarifications: 0, difficulty, industry: industry || null, status: 'in_progress', feedback_status: 'none', timer_remaining_ms: TOTAL_MS, skips_used: 0, end_reason: null, created_at: new Date().toISOString(), size_bytes: 0, rating: null, feedback_attempts: 0, messages: [], last_tick: Date.now(), feedback: null }
       db.interviews.unshift(i)
       await sleep(700)
       const first = db.user.name.split(' ')[0]
-      addMsg(i, 'interviewer', `Hi ${first}, thanks for joining. ${nextQuestion(i, { opening: true })}`)
+      addMsg(i, 'interviewer', `Hi ${first}, thanks for joining. ${nextQuestion(i, { opening: true })}`, { area: i.current_category })
       return { body: { session: publicSession(i), messages: i.messages } }
     }
     const i = body.id ? db.interviews.find((x) => x.id === body.id) : active()
@@ -123,8 +154,6 @@ export function createApp() {
       charge(i)
       return { body: { session: publicSession(i), messages: a === 'resume' ? i.messages : undefined } }
     }
-    charge(i)
-    if (i.status !== 'in_progress') return { body: { session: publicSession(i), messages: i.messages, ended: true } }
     if (a === 'submit_answer') {
       const text = String(body.text || '').trim()
       if (!text) return err(400, 'empty_answer', 'Say or edit your answer before submitting.')
@@ -132,26 +161,44 @@ export function createApp() {
       const last = i.messages.at(-1)
       if (last.role === 'candidate') return err(409, 'duplicate', 'Answer already submitted.')
       if (bytes(i) + text.length > 200_000) return err(413, 'session_too_large', 'This interview is too large to continue.')
-      addMsg(i, 'candidate', text)
-      return { body: { session: publicSession(i), message: i.messages.at(-1) } }
+      // the answer is saved before the clock is charged, so one submitted in the last seconds still counts
+      const m = addMsg(i, 'candidate', text)
+      charge(i)
+      i.size_bytes = bytes(i)
+      return { body: { session: publicSession(i), message: m, messages: i.messages, ended: i.status !== 'in_progress' } }
+    }
+    charge(i)
+    if (i.status !== 'in_progress') return { body: { session: publicSession(i), messages: i.messages, ended: true } }
+    if (a === 'clarify') {
+      const text = String(body.text || '').trim()
+      if (!text) return err(400, 'empty_answer', 'Type or say your question first.')
+      if (text.length > 600) return err(400, 'too_long', 'Keep your clarifying question short.')
+      if (i.messages.at(-1).role !== 'interviewer') return err(409, 'out_of_order', 'Ask while a question is open.')
+      if (i.clarifications >= MAX_CLARIFY) return err(409, 'no_clarifications', 'You have used your clarifying questions. Make a reasonable assumption, say it out loud, and answer.')
+      i.clarifications += 1
+      const q = addMsg(i, 'candidate', text, { kind: 'clarify', submitted: false })
+      await sleep(500)
+      const m = addMsg(i, 'interviewer', clarifyReply(text), { kind: 'clarify' })
+      i.size_bytes = bytes(i)
+      return { body: { session: publicSession(i), messages: [q, m] } }
     }
     if (a === 'next_question') {
       if (i.messages.at(-1).role !== 'candidate') return err(409, 'out_of_order', 'Submit an answer first.')
       await sleep(900)
       if (db.flags.busyNext) { db.flags.busyNext = false; return err(429, 'ai_busy', 'The AI is busy or the free limit was reached. Your answer is saved. Try again.', true) }
-      const m = addMsg(i, 'interviewer', nextQuestion(i))
+      const m = addMsg(i, 'interviewer', nextQuestion(i), { area: i.current_category })
       i.size_bytes = bytes(i)
       charge(i)
       return { body: { session: publicSession(i), message: m } }
     }
     if (a === 'skip') {
       if (i.skips_used >= MAX_SKIPS) return err(409, 'no_skips', 'No skips left.')
-      const lastQ = i.messages.at(-1)
-      if (lastQ.role !== 'interviewer') return err(409, 'out_of_order', 'Nothing to skip.')
+      if (i.messages.at(-1).role !== 'interviewer') return err(409, 'out_of_order', 'Nothing to skip.')
+      const lastQ = [...i.messages].reverse().find((m) => m.role === 'interviewer' && m.kind !== 'clarify')
       lastQ.skipped = true
       i.skips_used += 1
       await sleep(600)
-      const m = addMsg(i, 'interviewer', nextQuestion(i))
+      const m = addMsg(i, 'interviewer', nextQuestion(i), { area: i.current_category })
       return { body: { session: publicSession(i), message: m } }
     }
     if (a === 'end') {
@@ -161,31 +208,109 @@ export function createApp() {
     return err(400, 'unknown_action', 'Unknown action.')
   }
 
+  // Per-answer feedback: simple, visible checks, so every point traces back to what was said
+  // Quotes are the candidate's own words, verbatim. A quote is only kept if it appears exactly in the answer,
+  // so feedback can always be checked against what was said (a real AI scorer must follow the same rule).
+  const MAX_QUOTE = 240
+  const sentencesOf = (text) => text.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean)
+  function quote(answer, sentence) {
+    if (!sentence) return null
+    let q = sentence.trim(), cut = false
+    if (q.length > MAX_QUOTE) { q = q.slice(0, q.lastIndexOf(' ', MAX_QUOTE) > 80 ? q.lastIndexOf(' ', MAX_QUOTE) : MAX_QUOTE); cut = true }
+    return answer.includes(q) ? { quote: q, cut } : null
+  }
+
+  // Per-answer feedback: simple, visible checks. Every point is tied to a quote: what you said that earned it,
+  // or, for something missing, the sentence where it would have belonged.
+  function answerFeedback(answer, area) {
+    const words = answer.split(/\s+/).filter(Boolean).length
+    const sents = sentencesOf(answer)
+    const first = sents[0], last = sents[sents.length - 1]
+    const decision = sents.find((x) => /\b(I would|I'd|I will|I'll|we would|we should|I (chose|decided|picked|proposed)|my (plan|approach|recommendation))\b/i.test(x)) ?? first
+    const weSentence = sents.find((x) => /\bwe\b/i.test(x)) ?? first
+    // [key, pattern, good text, missing text, tip, where it was missing, note for that place]
+    const structure = ['structure', /\b(first|second|then|finally|because|so that)\b/i, 'You gave the answer a clear structure.', 'The answer had no visible structure.', 'Say your structure up front, for example: "I will cover the user, then options, then how I would measure it."', first, 'You opened with this. Saying your structure here would help the interviewer follow you.']
+    const tradeoff = ['tradeoff', /\b(trade|instead|versus|vs|cost|sacrific|downside|risk)/i, 'You named a trade-off or a risk.', 'You did not name a trade-off.', 'Say what you give up with your choice, and why it is worth it.', decision, 'You made this choice without saying what it costs.']
+    const user = ['user', /\b(users?|customers?|segments?|persona|owners?|students?|patients?|buyers?|creators?)\b/i, 'You said who you are solving for.', 'You did not say who the user is.', 'Name one specific user segment before proposing anything.', decision, 'You proposed this without saying who it is for.']
+    const metric = ['metric', /\b(metrics?|measure|kpi|rate|conversion|retention|success)\b|%/i, 'You said how you would measure success.', 'There was no way to measure success.', 'Close with one success metric and one guardrail metric.', last, 'Your answer ended here, without a way to measure success.']
+    const checks = area === 'behavioral'
+      ? [structure,
+         ['ownership', /\bI (led|owned|decided|drove|built|proposed|chose|ran|pushed)\b/, 'You made your own role clear.', 'Your own role was unclear.', 'Say what you personally did, using "I", not only "we".', weSentence, 'Here it is not clear what you did yourself.'],
+         ['result', /\b(result|outcome|shipped|launched|learned|learnt|impact|improved)\b/i, 'You described the result.', 'The story had no clear result.', 'End with the outcome and what you learned.', last, 'The story ended here, without the result.'],
+         tradeoff]
+      : area === 'ai-product'
+        ? [structure, user, ['eval', /\b(eval|accuracy|hallucinat|test set|human review|quality bar|quality)/i, 'You explained how you would judge the AI\'s quality.', 'You did not say how you would judge whether the AI works.', 'Define a quality bar and how you would test against it before launch.', decision, 'You proposed this without saying how you would know the AI works.'], tradeoff]
+        : [structure, user, metric, tradeoff]
+    // prefer a sentence not quoted yet, so each point shows different evidence when the answer has it
+    const used = new Set()
+    const pick = (re) => { const all = sents.filter((x) => re.test(x)); const hit = all.find((x) => !used.has(x)) ?? all[0]; if (hit) used.add(hit); return hit }
+    const passed = checks.filter((c) => c[1].test(answer))
+    const failed = checks.filter((c) => !c[1].test(answer))
+    const short = words < 40
+    return {
+      verdict: !short && passed.length >= 3 ? 'Strong' : words >= 25 && passed.length >= 2 ? 'Solid' : 'Needs work',
+      good: passed.slice(0, 3).map((c) => ({ text: c[2], ...quote(answer, pick(c[1])) })),
+      missing: [
+        ...(short ? [{ text: `At ${words} words, the answer was short for this question.`, note: 'Add a concrete example or a number to go one level deeper.' }] : []),
+        ...failed.map((c) => ({ text: c[3], note: c[6], ...quote(answer, c[5]) })),
+      ].slice(0, 2),
+      tip: short ? 'Go one level deeper: add a concrete example or a number.' : failed[0]?.[4] ?? 'This answer covered the basics. Keep this structure.',
+    }
+  }
+
   // Mock evaluator: transparent heuristics so scores respond to what the user said.
   function generateFeedback(i) {
     const answers = i.messages.filter((m) => m.role === 'candidate' && m.submitted).map((m) => m.content)
     const all = answers.join(' ')
     const avgWords = all.split(/\s+/).filter(Boolean).length / Math.max(1, answers.length)
-    const comps = S.CATEGORIES[i.category].competencies.map((name, idx) => {
+    const cats = i.categories || [i.category]
+    const comps = [...new Set(cats.flatMap((c) => S.CATEGORIES[c].competencies))].map((name, idx) => {
       const re = S.KEYWORDS[name.toLowerCase()]
       const hits = re ? (all.match(new RegExp(re.source, 'gi')) || []).length : 0
       const jitter = (((i.id.charCodeAt(1) || 1) * (idx + 3)) % 7) / 10 - 0.3
       const raw = 1.8 + Math.min(1.4, avgWords / 55) + Math.min(1.2, hits * 0.3) + jitter
       const score = Math.max(1, Math.min(5, Math.round(raw * 2) / 2))
-      const sentence = answers.flatMap((t) => t.split(/(?<=[.!?])\s+/)).find((s) => re && new RegExp(re.source, 'i').test(s))
       const band = score >= 4 ? 'Strong' : score >= 3 ? 'Solid' : 'Needs work'
-      const explanation = { Strong: `You handled ${name.toLowerCase()} with clear reasoning.`, Solid: `Reasonable on ${name.toLowerCase()}, but the reasoning could be more explicit.`, 'Needs work': `${name} was thin. Be more specific and show your reasoning step by step.` }[band] + (sentence ? ` Evidence: "${sentence.slice(0, 140)}"` : '')
-      return { name, score, explanation }
+      const explanation = { Strong: `You handled ${name.toLowerCase()} with clear reasoning.`, Solid: `Reasonable on ${name.toLowerCase()}, but the reasoning could be more explicit.`, 'Needs work': `${name} was thin. Be more specific and show your reasoning step by step.` }[band]
+      return { name, score, explanation, re }
     })
     const overall = Math.round((comps.reduce((n, c) => n + c.score, 0) / comps.length) * 10) / 10
     const sorted = [...comps].sort((a, b) => b.score - a.score)
+    const band = overall >= 4 ? 'Strong' : overall >= 3 ? 'Solid' : 'Needs work'
+    // question-by-question: each answer (or skip) with the question it answered
+    const qa = []
+    i.messages.forEach((m, k) => {
+      if (m.role === 'interviewer' && m.skipped) qa.push({ seq: m.seq, question: m.content, skipped: true })
+      if (m.role !== 'candidate' || !m.submitted) return
+      const q = i.messages.slice(0, k).reverse().find((x) => x.role === 'interviewer' && x.kind !== 'clarify')
+      const area = q?.area ?? i.category
+      qa.push({ seq: m.seq, question: q?.content ?? '', answer: m.content, area, skipped: false, ...answerFeedback(m.content, area) })
+    })
+    qa.sort((a, b) => a.seq - b.seq)
+    // each skill's evidence: the first sentence, in question order, that shows it, with the question number;
+    // null means no sentence showed the skill, which the report says plainly
+    const scored = qa.map((x, k) => ({ ...x, qn: k + 1 })).filter((x) => !x.skipped)
+    comps.forEach((c) => {
+      let ev = null
+      for (const x of scored) {
+        const hit = c.re && sentencesOf(x.answer).find((t) => new RegExp(c.re.source, 'i').test(t))
+        const q = hit && quote(x.answer, hit)
+        if (q) { ev = { ...q, seq: x.seq, qn: x.qn }; break }
+      }
+      c.evidence = ev
+      delete c.re
+    })
+    // final guard: drop any quote that is not word-for-word in its answer
+    scored.forEach((x) => ['good', 'missing'].forEach((k) => x[k] && x[k].forEach((p) => { if (p.quote && !x.answer.includes(p.quote)) { delete p.quote; delete p.cut } })))
     return {
       overall_score: overall,
-      explanation: `Overall ${overall}/5 across ${comps.length} competencies, computed by the server as the average of competency scores.`,
+      band,
+      explanation: `${band}. Your score is the average of ${comps.length} skills. Your strongest was ${sorted[0].name}; work on ${sorted[sorted.length - 1].name} first.`,
+      answers: qa,
       competency_scores: comps,
       strengths: sorted.slice(0, 2).map((c) => (c.score >= 4 ? `${c.name}: clear, well-reasoned answers.` : `${c.name}: a solid base to build on (${c.score}/5).`)),
       improvement_areas: sorted.slice(-2).reverse().map((c) => c.name),
-      suggestions: [`Spend your first 30 seconds on structure before answering ${S.CATEGORIES[i.category].label.toLowerCase()} questions.`, 'Name the trade-off you are accepting whenever you pick an option.', 'Close each answer with how you would measure success.'],
+      suggestions: [`Spend your first 30 seconds on structure before answering ${cats.map((c) => S.CATEGORIES[c].label.toLowerCase()).join(' and ')} questions.`, 'Name the trade-off you are accepting whenever you pick an option.', 'Close each answer with how you would measure success.'],
       model: 'mock-evaluator-1',
     }
   }
@@ -212,19 +337,44 @@ export function createApp() {
   // ---------- option features ----------
   const scoreRes = (r) => r.up + (db.resourceVotes[r.id] || 0) + r.expertUp * 3
   const resources = () => S.RESOURCES.map((r) => ({ ...r, voted: db.resourceVotes[r.id] || 0, score: scoreRes(r) }))
-  const avgByCategory = () => {
-    const by = {}
-    db.interviews.filter((i) => i.feedback).forEach((i) => ((by[i.category] ||= []).push(i.feedback.overall_score)))
-    return Object.keys(S.CATEGORIES).map((c) => ({ area: c, label: S.CATEGORIES[c].label, score: by[c] ? Math.round((by[c].reduce((a, b) => a + b, 0) / by[c].length) * 10) / 10 : null }))
+  const round1 = (n) => Math.round(n * 10) / 10
+  // An area's score in one interview: the average of that area's competencies, so mixed interviews count per area
+  const areaScore = (i, area) => {
+    const xs = i.feedback.competency_scores.filter((c) => S.CATEGORIES[area].competencies.includes(c.name)).map((c) => c.score)
+    return round1(xs.reduce((a, b) => a + b, 0) / xs.length)
+  }
+  // progress, gaps and the study plan count real interviews only: the "How do you use AI?" practice is kept separate
+  const scored = () => db.interviews.filter((i) => i.feedback && i.opening !== 'ai-usage').sort((a, b) => a.created_at.localeCompare(b.created_at)) // oldest first
+  const areaHistory = () => Object.keys(S.CATEGORIES).map((c) => ({
+    area: c, label: S.CATEGORIES[c].label,
+    points: scored().filter((i) => (i.categories || [i.category]).includes(c)).map((i) => ({ id: i.id, date: i.created_at, score: areaScore(i, c) })),
+  }))
+  // gaps use the latest score per area: it reflects where you are now, not your average
+  const avgByCategory = () => areaHistory().map((a) => ({ area: a.area, label: a.label, score: a.points.at(-1)?.score ?? null, previous: a.points.at(-2)?.score ?? null }))
+  function progress() {
+    const comps = {}
+    scored().forEach((i) => i.feedback.competency_scores.forEach((c) => {
+      const area = (i.categories || [i.category]).find((a) => S.CATEGORIES[a].competencies.includes(c.name))
+      ;(comps[c.name] ||= []).push({ score: c.score, area })
+    }))
+    const focus = Object.entries(comps).map(([name, xs]) => ({ name, score: xs.at(-1).score, previous: xs.at(-2)?.score ?? null, area: xs.at(-1).area, label: S.CATEGORIES[xs.at(-1).area].label }))
+      .sort((a, b) => a.score - b.score).slice(0, 3)
+    return { body: { scored: scored().length, areas: areaHistory(), focus } }
   }
 
-  function roadmap(body) {
+  // Self-assessed confidence (1 not, 2 somewhat, 3 confident) stands in for a score until the user has real ones
+  const CONF_SCORE = { 1: 2, 2: 3, 3: 4 }
+  const effScore = (a) => a.score ?? (a.confidence ? CONF_SCORE[a.confidence] : null)
+  // lower score = more time; an area with no evidence at all gets little, because a known weakness matters more than an unknown
+  const weight = (a) => (effScore(a) == null ? 1.5 : Math.max(0.5, 5.5 - effScore(a)))
+  const weeksUntil = (date) => { const t = Date.parse(date); return Number.isFinite(t) ? Math.max(1, Math.min(12, Math.ceil((t - Date.now()) / (7 * 864e5)))) : null }
+
+  function buildPlan(body) {
     const hours = Math.max(1, Math.min(40, Number(body.hoursPerWeek) || 5))
-    const weeks = Math.max(1, Math.min(12, Number(body.weeks) || 3))
-    const areas = (body.areas || []).filter((a) => a.area)
-    if (!areas.length) return err(400, 'invalid_input', 'Pick at least one area to work on.')
+    const weeks = Math.max(1, Math.min(12, weeksUntil(body.interviewDate) ?? (Number(body.weeks) || 3)))
+    const areas = (body.areas || []).filter((a) => S.CATEGORIES[a.area])
+    if (!areas.length) return { error: err(400, 'invalid_input', 'Pick at least one area to work on.') }
     const budget = hours * weeks * 60
-    const weight = (a) => (a.score == null ? 3 : Math.max(0.5, 5.5 - a.score)) // lower score = more time
     const totalW = areas.reduce((n, a) => n + weight(a), 0)
     const tierRank = { must: 0, should: 1, could: 2 }
     const picked = [], later = []
@@ -246,16 +396,70 @@ export function createApp() {
     const sortedIdx = areas.map((a, k) => k).sort((x, y) => weight(areas[y]) - weight(areas[x]))
     while (queues.some((q) => q.length)) sortedIdx.forEach((k) => queues[k].length && order.push(queues[k].shift()))
     order.push(...extras)
-    const plan = Array.from({ length: weeks }, (_, w) => ({ week: w + 1, minutes: 0, items: [] }))
+    const plan = Array.from({ length: weeks }, (_, w) => ({ week: w + 1, minutes: 0, items: [], mock: null }))
     const spill = []
     order.forEach((r) => {
       const slot = plan.find((p) => p.minutes + r.minutes <= hours * 60)
       slot ? (slot.items.push(r), (slot.minutes += r.minutes)) : spill.push(r)
     })
+    // every week has one mock interview on its two weakest areas; a self-assessed plan opens with a baseline instead
+    const weakest = (ids) => areas.filter((a) => ids.includes(a.area)).sort((x, y) => weight(y) - weight(x)).slice(0, 2).map((a) => a.area)
+    const baseline = areas.every((a) => a.score == null)
+    plan.forEach((w, k) => {
+      const ids = w.items.map((r) => r.area).filter(Boolean)
+      if (k === 0 && baseline) w.mock = { areas: weakest(areas.map((a) => a.area)), baseline: true }
+      else if (ids.length) w.mock = { areas: weakest(ids), baseline: false }
+    })
     const mustTotal = resources().filter((r) => r.tier === 'must' && areas.some((a) => r.topics.includes(a.area))).length
     const mustCovered = picked.filter((r) => r.tier === 'must').length
     const dedupe = (arr) => arr.filter((r, k) => arr.findIndex((z) => z.id === r.id) === k && !picked.some((p) => p.id === r.id))
-    return { body: { weeks: plan, budgetMinutes: budget, plannedMinutes: plan.reduce((n, p) => n + p.minutes, 0), mustTotal, mustCovered, notFitted: dedupe([...later, ...spill]).slice(0, 8) } }
+    return {
+      weeks: plan, budgetMinutes: budget, plannedMinutes: plan.reduce((n, p) => n + p.minutes, 0), mustTotal, mustCovered, notFitted: dedupe([...later, ...spill]).slice(0, 8),
+      hoursPerWeek: hours, areas: areas.map((a) => ({ area: a.area, label: S.CATEGORIES[a.area].label, score: a.score ?? null, confidence: a.confidence ?? null })),
+    }
+  }
+  function roadmap(body) {
+    const built = buildPlan(body)
+    return built.error || { body: built }
+  }
+
+  // ---- saved study plan ----
+  const latestScores = () => Object.fromEntries(areaHistory().map((a) => [a.area, a.points.at(-1)?.score ?? null]))
+  function savePlan(b, keep) {
+    const built = buildPlan(b)
+    if (built.error) return built.error
+    const now = new Date().toISOString()
+    db.plan = {
+      ...built,
+      basis: built.areas.every((a) => a.score == null) ? 'self' : 'reports',
+      level: ['APM', 'PM'].includes(b.level) ? b.level : null,
+      interview_date: b.interviewDate || null,
+      snapshot: latestScores(), // what the scores were when the plan was made, to explain later changes
+      created_at: now,
+      started_at: keep?.started_at ?? now,
+      done: keep?.done ?? [],
+    }
+    return { body: { plan: planView() } }
+  }
+  function planView() {
+    const p = db.plan
+    if (!p) return null
+    const latest = latestScores()
+    const changes = p.areas.filter((a) => (latest[a.area] ?? null) !== (p.snapshot[a.area] ?? null))
+      .map((a) => ({ area: a.area, label: a.label, from: p.snapshot[a.area] ?? null, to: latest[a.area] }))
+    // a week's mock counts as done once an interview on one of its areas is scored after the plan started
+    const used = new Set()
+    const after = scored().filter((i) => i.created_at >= p.started_at)
+    const weeks = p.weeks.map((w) => {
+      if (!w.mock) return w
+      const hit = after.find((i) => !used.has(i.id) && (i.categories || [i.category]).some((c) => w.mock.areas.includes(c)))
+      if (hit) used.add(hit.id)
+      return { ...w, mock: { ...w.mock, done: !!hit, interviewId: hit?.id ?? null } }
+    })
+    const steps = weeks.reduce((n, w) => n + w.items.length + (w.mock ? 1 : 0), 0)
+    const doneSteps = weeks.reduce((n, w) => n + w.items.filter((r) => p.done.includes(r.id)).length + (w.mock?.done ? 1 : 0), 0)
+    const currentWeek = Math.max(1, Math.min(weeks.length, Math.floor((Date.now() - Date.parse(p.started_at)) / (7 * 864e5)) + 1))
+    return { ...p, weeks, changes, steps, doneSteps, currentWeek }
   }
 
   function parseTranscript(text) {
@@ -273,11 +477,31 @@ export function createApp() {
     const overlap = p.availability.filter((s) => db.myAvailability.has(s))
     return { id: p.id, name: p.name, level: p.level, focus: p.focus, bio: p.bio, availability: p.availability, overlap }
   }
-  const toolView = (t) => {
-    const reports = db.toolReports[t.id] || []
-    const infl = reports.length ? Math.round(((t.influence * 5 + reports.reduce((n, r) => n + r.impact, 0)) / (5 + reports.length)) * 10) / 10 : t.influence
-    return { ...t, influence: infl, up: t.up + (db.toolVotes[t.id] || 0), voted: db.toolVotes[t.id] || 0, reports }
+  // ---- AI tools catalogue: facts come from the data file with sources; ratings and experiences only from users ----
+  const STALE_DAYS = 60 // facts older than this are flagged for re-checking
+  // counts words that look like words: letters only, 2 to 20 long, with a vowel; keyboard mashing does not count
+  const realWords = (text) => String(text).split(/\s+/).map((w) => w.replace(/[^a-z']/gi, '')).filter((w) => w.length >= 2 && w.length <= 20 && /[aeiouy]/i.test(w)).length
+  const reviewView = (r) => ({ ...r, helpfulCount: r.helpful + (db.reviewHelpful.has(r.id) ? 1 : 0), helpedByMe: db.reviewHelpful.has(r.id), reportedByMe: db.reviewReported.has(r.id) })
+  const toolStats = (t) => {
+    const rs = db.toolReviews.filter((r) => r.toolId === t.id)
+    const rated = rs.filter((r) => !r.affiliated) // reviews from people who work with the maker are shown, but not counted in the rating
+    const taskCount = {}
+    rs.forEach((r) => r.tasks.forEach((k) => (taskCount[k] = (taskCount[k] || 0) + 1)))
+    return {
+      ...t,
+      rating: rated.length ? Math.round((rated.reduce((n, r) => n + r.rating, 0) / rated.length) * 10) / 10 : null,
+      reviewCount: rs.length,
+      ratedCount: rated.length,
+      affiliatedCount: rs.length - rated.length,
+      sampleCount: rated.filter((r) => r.sample).length,
+      topTasks: Object.entries(taskCount).sort((a, b) => b[1] - a[1]).map(([task, count]) => ({ task, label: T.TOOL_TASKS[task], count })),
+      breakdown: [5, 4, 3, 2, 1].map((stars) => ({ stars, count: rated.filter((r) => r.rating === stars).length })),
+      reviewIndustries: [...new Set(rs.map((r) => r.industry))],
+      stale: (Date.now() - Date.parse(t.checked)) / 864e5 > STALE_DAYS,
+      myReviewId: rs.find((r) => r.mine)?.id ?? null,
+    }
   }
+  const toolLists = () => ({ tasks: T.TOOL_TASKS, roles: T.TOOL_ROLES, frequency: T.TOOL_FREQUENCY, industries: S.INDUSTRIES.map((x) => x.name) })
 
   // ---------- router ----------
   const routes = []
@@ -401,21 +625,63 @@ export function createApp() {
     return { body: { resources: resources() } }
   })
   on('POST', '/api/roadmap', roadmap)
+  on('GET', '/api/plan', () => ({ body: { plan: planView() } }))
+  on('POST', '/api/plan', (b) => savePlan(b))
+  // rebuild with the latest scores, keeping ticked items and the start date
+  on('POST', '/api/plan/update', () => {
+    const p = db.plan
+    if (!p) return err(404, 'not_found', 'You do not have a study plan yet.')
+    const latest = latestScores()
+    const areas = p.areas.map((a) => (latest[a.area] != null ? { area: a.area, score: latest[a.area] } : { area: a.area, confidence: a.confidence }))
+    return savePlan({ areas, hoursPerWeek: p.hoursPerWeek, interviewDate: p.interview_date, weeks: p.weeks.length, level: p.level }, p)
+  })
+  on('POST', '/api/plan/items/:id', (b, id) => {
+    const p = db.plan
+    if (!p) return err(404, 'not_found', 'You do not have a study plan yet.')
+    p.done = p.done.includes(id) ? p.done.filter((x) => x !== id) : [...p.done, id]
+    return { body: { plan: planView() } }
+  })
+  on('POST', '/api/plan/reset', () => { db.plan = null; return { body: { plan: null } } })
+  on('GET', '/api/progress', progress)
 
   // Option 5: AI tools
-  on('GET', '/api/ai-tools', () => ({ body: { tools: S.AI_TOOLS.map(toolView), industries: [...new Set(S.AI_TOOLS.flatMap((t) => t.industries))].sort(), categories: [...new Set(S.AI_TOOLS.map((t) => t.category))] } }))
-  on('POST', '/api/ai-tools/:id/vote', (b, id) => {
-    if (!S.AI_TOOLS.some((t) => t.id === id)) return err(404, 'not_found', 'Tool not found.')
-    db.toolVotes[id] = db.toolVotes[id] ? 0 : 1
-    return { body: { tool: toolView(S.AI_TOOLS.find((t) => t.id === id)) } }
-  })
-  on('POST', '/api/ai-tools/:id/reports', (b, id) => {
-    const t = S.AI_TOOLS.find((x) => x.id === id)
+  on('GET', '/api/ai-tools', () => ({ body: { tools: T.AI_TOOLS.map(toolStats), ...toolLists() } }))
+  on('GET', '/api/ai-tools/:id', (b, id) => {
+    const t = T.AI_TOOLS.find((x) => x.id === id)
     if (!t) return err(404, 'not_found', 'Tool not found.')
-    const impact = Number(b.impact)
-    if (!b.use?.trim() || !b.industry || !(impact >= 1 && impact <= 5)) return err(400, 'invalid_input', 'Say what you use it for, your industry and the impact from 1 to 5.')
-    ;(db.toolReports[id] ||= []).unshift({ use: b.use.trim().slice(0, 200), industry: b.industry, impact, role: String(b.role || 'PM').slice(0, 60), when: 'Just now' })
-    return { body: { tool: toolView(t) } }
+    return { body: { tool: toolStats(t), reviews: db.toolReviews.filter((r) => r.toolId === id).map(reviewView), ...toolLists() } }
+  })
+  // one review per user per tool: posting again edits it
+  on('POST', '/api/ai-tools/:id/reviews', (b, id) => {
+    if (!T.AI_TOOLS.some((x) => x.id === id)) return err(404, 'not_found', 'Tool not found.')
+    const rating = Number(b.rating)
+    const tasks = Array.isArray(b.tasks) ? [...new Set(b.tasks)].filter((k) => T.TOOL_TASKS[k]) : []
+    const text = String(b.text || '').trim()
+    if (!T.TOOL_FREQUENCY[b.frequency]) return err(400, 'invalid_input', 'Say how often you use it.')
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) return err(400, 'invalid_input', 'Choose a rating from 1 to 5 stars.')
+    if (!tasks.length) return err(400, 'invalid_input', 'Pick at least one thing you use it for.')
+    if (text.length < 50 || realWords(text) < 10) return err(400, 'invalid_input', 'Write at least 10 words about your experience.')
+    if (text.length > 1500) return err(400, 'invalid_input', 'Keep your review under 1,500 characters.')
+    if (!T.TOOL_ROLES.includes(b.role)) return err(400, 'invalid_input', 'Choose your role.')
+    if (!S.INDUSTRIES.some((x) => x.name === b.industry)) return err(400, 'invalid_input', 'Choose your industry.')
+    const data = { rating, frequency: b.frequency, tasks, text, role: b.role, industry: b.industry, affiliated: !!b.affiliated }
+    let r = db.toolReviews.find((x) => x.toolId === id && x.mine)
+    if (r) Object.assign(r, data, { edited: new Date().toISOString() })
+    else db.toolReviews.unshift((r = { id: 'v' + rid(), toolId: id, helpful: 0, created: new Date().toISOString(), sample: false, mine: true, ...data }))
+    return { body: { review: reviewView(r) } }
+  })
+  on('POST', '/api/ai-reviews/:id/helpful', (b, id) => {
+    const r = db.toolReviews.find((x) => x.id === id)
+    if (!r) return err(404, 'not_found', 'Review not found.')
+    if (r.mine) return err(409, 'own_review', 'You cannot mark your own review as helpful.')
+    db.reviewHelpful.has(id) ? db.reviewHelpful.delete(id) : db.reviewHelpful.add(id)
+    return { body: { review: reviewView(r) } }
+  })
+  on('POST', '/api/ai-reviews/:id/report', (b, id) => {
+    const r = db.toolReviews.find((x) => x.id === id)
+    if (!r) return err(404, 'not_found', 'Review not found.')
+    db.reviewReported.add(id) // demo: a real backend would queue it for moderation
+    return { body: { review: reviewView(r) } }
   })
 
   return async function handle(req, res) {

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, post } from '../api'
 import { useAuth } from '../auth'
-import { ErrorBox, Modal, PageHead, useAction, useToast } from '../ui'
+import { ErrorBox, Modal, PageHead, useAction, useCandidateView, useToast } from '../ui'
+import { VoicePicker } from './Sandbox'
 
 export default function Settings() {
   const { user, setUser, signOut } = useAuth()
@@ -13,6 +14,7 @@ export default function Settings() {
   const [open, setOpen] = useState(false)
   const save = useAction(async () => { const r = await api('PATCH', '/me', { name }); setUser(r.user); toast('Name saved') })
   const del = useAction(async () => { await post('/delete-account', { confirm }); signOut(); nav('/', { replace: true }) })
+  const [candidate, setCandidate] = useCandidateView()
   const flag = (b: object, m: string) => post('/_dev/flags', b).then(() => toast(m))
   return (
     <>
@@ -26,8 +28,14 @@ export default function Settings() {
           <ErrorBox error={save.error} />
         </section>
         <section className="card stack">
+          <h2>Interviewer voice</h2>
+          <p className="muted">How questions are read aloud during interviews. Saved on this device.</p>
+          <VoicePicker />
+        </section>
+        <section className="card stack">
           <h2>Prototype tools</h2>
           <p className="muted">Trigger the failure screens on demand. These are only here so you can see the fallbacks.</p>
+          <label className="row" style={{ cursor: 'pointer' }}><input type="checkbox" style={{ width: 18 }} checked={candidate} onChange={(e) => setCandidate(e.target.checked)} /><span><b>Candidate view</b> <span className="muted small">Hide "Ideas to compare" and the AI test, so user-testing sessions see only the product. Saved in this browser.</span></span></label>
           <div className="row"><button className="btn ghost sm" onClick={() => flag({ busyNext: true }, 'Next AI question will fail once')}>Make next AI question fail</button><button className="btn ghost sm" onClick={() => flag({ feedbackFailNext: true }, 'Next report will fail once')}>Make next report fail</button></div>
           <button className="btn ghost sm" style={{ justifySelf: 'start' }} onClick={() => post('/_dev/reset').then(() => { toast('Sample data reset'); signOut(); nav('/login') })}>Reset all sample data</button>
         </section>

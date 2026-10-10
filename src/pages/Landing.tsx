@@ -19,7 +19,7 @@ export default function Landing() {
             <Link className="btn lime lg" to={user ? '/interview/setup' : '/signup'}>{user ? 'Start an interview' : 'Start free'}</Link>
             <Link className="btn ghost lg" to="/login">I already have an account</Link>
           </div>
-          <p className="muted small" style={{ marginTop: 14 }}>Built for aspiring APMs and practising PMs. Works best on desktop Chrome or Edge.</p>
+          <p className="muted small" style={{ marginTop: 14 }}>Built for aspiring APMs and practising PMs. <b>Voice answers need desktop Chrome or Edge</b>; in other browsers and on phones you would type your answers instead.</p>
         </div>
         <div className="hero-card" aria-hidden="true">
           <div className="row between"><span style={{ color: '#b8a8f0' }}>Time left</span><span className="pill lime">Metrics · Medium</span></div>
@@ -28,6 +28,7 @@ export default function Landing() {
           <div className="bubble me">I would first define conversion and its denominator, then segment by channel and release.</div>
         </div>
       </section>
+      <footer className="land-foot small muted">ProManAI is a practice tool. AI questions and scores can be wrong and do not predict real interview results. <Link to="/disclaimer">Read the disclaimer</Link></footer>
     </div>
   )
 }

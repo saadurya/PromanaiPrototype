@@ -1,8 +1,35 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { post } from '../api'
 import { ErrorBox, PageHead, Spinner, useAction } from '../ui'
-import { speak, useRecognizer } from '../voice'
+import { isNaturalVoice, onVoiceFallback, speak, useRecognizer, useVoices } from '../voice'
 import { MicCheck } from './Setup'
+
+const SAMPLE_LINE = 'Hi, thanks for joining. Tell me about a product you love, and one thing you would change about it.'
+
+// Choose how the interviewer sounds; remembered on this device
+export function VoicePicker() {
+  const { voices, selected, choose, supported } = useVoices()
+  const [notice, setNotice] = useState('')
+  useEffect(() => onVoiceFallback(setNotice), [])
+  if (!supported) return <p className="small muted">This browser cannot read questions aloud. Questions are always shown as text as well.</p>
+  if (!voices.length) return <p className="small muted">Loading voices…</p>
+  const hasNatural = voices.some(isNaturalVoice)
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <label className="field">Interviewer voice
+        <select value={selected} onChange={(e) => { setNotice(''); choose(e.target.value); speak(SAMPLE_LINE) }}>
+          {voices.map((v) => <option key={v.name} value={v.name}>{v.name}{isNaturalVoice(v) ? ' · natural' : ''}</option>)}
+        </select>
+      </label>
+      <div className="row">
+        <button className="btn ghost sm" onClick={() => speak(SAMPLE_LINE)}>Play sample</button>
+        <span className="small muted">{hasNatural ? 'Voices marked “natural” sound the most human. They stream online, so they need an internet connection and may not work in private windows.' : 'This browser only has basic voices. Edge and Chrome offer more natural ones.'}</span>
+      </div>
+      {notice && <div className="banner warn" role="status"><span>{notice}</span></div>}
+      <p className="small muted">Still silent? Check that this tab is not muted and your system volume is up.</p>
+    </div>
+  )
+}
 
 export function VoiceTest() {
   const [text, setText] = useState('')
@@ -14,7 +41,7 @@ export function VoiceTest() {
       <div className="grid2">
         <section className="card stack"><h2>Microphone</h2><MicCheck onPass={() => {}} /></section>
         <section className="card stack"><h2>Speech and playback</h2>
-          <button className="btn ghost" style={{ justifySelf: 'start' }} onClick={() => speak('This is how your interviewer will sound. Can you hear me clearly?')}>Play sample question</button>
+          <VoicePicker />
           <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Press Start speaking and say a sentence." />
           {rec.error && <div className="err" role="alert">{rec.error}</div>}
           <div className="row"><button className="btn" onClick={() => (rec.listening ? rec.stop() : rec.start())}>{rec.listening ? 'Stop speaking' : 'Start speaking'}</button><button className="btn ghost" onClick={() => setText('This is a simulated sentence for the prototype.')}>Fill sample text (prototype)</button></div>

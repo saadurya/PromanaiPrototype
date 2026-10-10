@@ -6,6 +6,7 @@ export const CATEGORIES = {
   metrics: { label: 'Metrics', competencies: ['Metric selection', 'Diagnosis', 'Experiment design', 'Interpretation', 'Communication'] },
   strategy: { label: 'Strategy', competencies: ['Market understanding', 'Positioning', 'Long-term thinking', 'Trade-offs', 'Communication'] },
   behavioral: { label: 'Behavioral', competencies: ['Ownership', 'Collaboration', 'Conflict handling', 'Self-awareness', 'Communication'] },
+  'ai-product': { label: 'AI Product Sense', competencies: ['Problem fit', 'Evaluation and metrics', 'Risk and safety', 'Trade-offs', 'Communication'] },
 }
 
 export const INDUSTRIES = [
@@ -29,6 +30,7 @@ export const QUESTION_TEMPLATES = {
   metrics: (c) => `${c.metric.charAt(0).toUpperCase() + c.metric.slice(1)} at ${c.company} dropped 8% week over week. How do you figure out what happened?`,
   strategy: (c) => `${c.company}, ${c.ctx}, is considering a new market segment. The tension is ${c.tension}. Would you enter it, and why?`,
   behavioral: (c) => `Tell me about a time you had to push a product decision forward without full agreement. (Think of it in the context of ${c.ctx}.)`,
+  'ai-product': (c) => `${c.company}, ${c.ctx}, wants to add an AI feature for ${c.user}. What would you build first, how would you know it works, and what could go wrong?`,
 }
 
 export const HARD_SUFFIX = {
@@ -43,6 +45,7 @@ export const FOLLOWUPS = {
   metrics: ['Which single metric would you look at first, and why that one?', 'How would you tell a real drop from noise?', 'You find two plausible causes. How do you separate them?', 'What guardrail metric would you watch while you fix it?'],
   strategy: ['What would a competitor do in response in the first six months?', 'What would have to be true for this to be a bad idea?', 'What are you choosing NOT to do, and who loses out?', 'How does this decision look in three years?'],
   behavioral: ['What did the other person say, and how did you respond?', 'What would you do differently now?', 'How did you know the decision was right?', 'What was your specific role versus the team’s?'],
+  'ai-product': ['When would you NOT use AI for this problem?', 'How would you decide the AI is good enough to launch?', 'The AI gives a user a confident but wrong answer. What happens next, and how do you design for that?', 'How would you trade off answer quality, speed and cost per request?', 'What user data would the feature need, and how do you handle privacy?'],
 }
 
 export const GENERIC_FOLLOWUPS = {
@@ -51,6 +54,9 @@ export const GENERIC_FOLLOWUPS = {
   noMetric: 'How would you measure whether that worked?',
   noTradeoff: 'What is the trade-off you are accepting with that choice?',
 }
+
+// Opening question for the "How do you use AI?" practice, started from the AI tools page
+export const AI_USAGE_QUESTION = 'Tell me how you use AI tools in your work. Pick one specific example and walk me through it, including how you checked the output.'
 
 export const CLOSING = 'Thank you, that is all the time we have. I will prepare your feedback report now.'
 
@@ -75,6 +81,9 @@ export const KEYWORDS = {
   collaboration: /we |together|partner|aligned|feedback/gi,
   'conflict handling': /disagree|conflict|pushback|concern|compromise/gi,
   'self-awareness': /learn|mistake|differently|realis|reflect/gi,
+  'problem fit': /problem|need|pain|why ai|without ai|simple|rule|workflow/gi,
+  'evaluation and metrics': /eval|accuracy|precision|hallucinat|test set|human review|quality|metric|measure/gi,
+  'risk and safety': /risk|safety|bias|privacy|fallback|guardrail|wrong|harm|trust/gi,
   'market understanding ': /market/gi,
 }
 
@@ -177,19 +186,10 @@ export const RESOURCES = [
   R('r12', 'Competitor teardown template (GitHub)', 'github', 'should', 25, ['strategy'], 66, 3, 'Sample repo'),
   R('r13', 'Behavioral stories: building a story bank with STAR', 'video', 'must', 25, ['behavioral'], 160, 9, 'Sample channel'),
   R('r14', 'Handling conflict questions without sounding scripted', 'article', 'should', 15, ['behavioral'], 84, 4, 'Sample blog'),
-  R('r15', 'How PMs use AI day to day: a practical overview', 'video', 'should', 30, ['ai-for-pm'], 77, 4, 'Sample channel'),
+  R('r15', 'How PMs use AI day to day: a practical overview', 'video', 'should', 30, ['ai-product'], 77, 4, 'Sample channel'),
+  R('r17', 'Evaluating AI features: a practical guide to evals for PMs', 'article', 'must', 25, ['ai-product'], 64, 5, 'Sample blog'),
+  R('r18', 'Designing for AI mistakes: fallbacks, confidence and user trust', 'article', 'should', 20, ['ai-product'], 41, 3, 'Sample blog'),
   R('r16', 'Estimation and back-of-envelope sizing drills', 'github', 'could', 30, ['strategy', 'metrics'], 52, 2, 'Sample repo'),
-]
-
-export const AI_TOOLS = [
-  { id: 't1', name: 'ChatGPT', category: 'General assistant', uses: ['Drafting PRDs', 'Brainstorming options', 'Summarising research'], industries: ['SaaS', 'E-commerce', 'Consumer Tech', 'EdTech'], companies: ['Tasklane (sample)', 'Cartly (sample)'], influence: 4.3, adoption: 'Widely used', updates: [{ when: 'This week', text: 'Sample update: longer context for document analysis.' }], up: 188, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }, { name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't2', name: 'Claude', category: 'General assistant', uses: ['Long-document synthesis', 'Spec review', 'Competitor research'], industries: ['SaaS', 'FinTech', 'HealthTech'], companies: ['Northwind Pay (sample)', 'Pulse Clinic (sample)'], influence: 4.2, adoption: 'Widely used', updates: [{ when: 'Last week', text: 'Sample update: improved handling of large files.' }], up: 164, expert: [{ name: 'Meera Iyer', role: 'Senior PM, Payments', vote: 1 }] },
-  { id: 't3', name: 'Notion AI', category: 'Docs and specs', uses: ['Meeting notes to action items', 'Spec first drafts', 'Wiki Q&A'], industries: ['SaaS', 'Communication'], companies: ['Hushline (sample)'], influence: 3.4, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: Q&A across workspace pages.' }], up: 92, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't4', name: 'Dovetail', category: 'Research synthesis', uses: ['Tagging interview transcripts', 'Theme clustering', 'Insight reports'], industries: ['EdTech', 'HealthTech', 'Consumer Tech'], companies: ['Lumina Learn (sample)'], influence: 3.6, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: auto-generated highlight reels.' }], up: 71, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't5', name: 'Amplitude', category: 'Analytics', uses: ['Natural-language chart questions', 'Anomaly alerts', 'Funnel diagnosis'], industries: ['E-commerce', 'FinTech', 'Social Media'], companies: ['Cartly (sample)', 'Chirpwave (sample)'], influence: 3.8, adoption: 'Growing', updates: [{ when: 'Last month', text: 'Sample update: AI-suggested follow-up analyses.' }], up: 84, expert: [{ name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't6', name: 'Figma', category: 'Design and prototyping', uses: ['Rapid wireframes', 'Prototype from prompt', 'Copy variants'], industries: ['Consumer Tech', 'Travel', 'Entertainment'], companies: ['Wayfound (sample)', 'Reelhouse (sample)'], influence: 3.1, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: prompt-to-prototype for simple flows.' }], up: 58, expert: [] },
-  { id: 't7', name: 'Perplexity', category: 'Research', uses: ['Market scans', 'Competitor facts with sources', 'Quick due diligence'], industries: ['FinTech', 'Travel', 'SaaS'], companies: ['Wayfound (sample)'], influence: 3.0, adoption: 'Growing', updates: [{ when: 'Last week', text: 'Sample update: deeper multi-step research mode.' }], up: 63, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }] },
-  { id: 't8', name: 'Jira AI features', category: 'Delivery', uses: ['Ticket drafting', 'Backlog dedupe', 'Sprint summaries'], industries: ['SaaS', 'FinTech', 'Communication'], companies: ['Tasklane (sample)', 'Hushline (sample)'], influence: 2.7, adoption: 'Early', updates: [{ when: 'This month', text: 'Sample update: ticket breakdown suggestions.' }], up: 39, expert: [] },
 ]
 
 export const SAMPLE_AUDIO_TRANSCRIPT = [
@@ -203,7 +203,7 @@ export const SAMPLE_AUDIO_TRANSCRIPT = [
 
 export function seedInterviews() {
   const mk = (id, category, difficulty, level, days, scores, overall, industry) => ({
-    id, level, category, difficulty, industry: industry || null, status: 'completed', feedback_status: 'ready', timer_remaining_ms: 0, skips_used: 0,
+    id, level, category, categories: [category], current_category: category, area_start: 0, difficulty, industry: industry || null, status: 'completed', feedback_status: 'ready', timer_remaining_ms: 0, skips_used: 0,
     end_reason: 'time_up', created_at: iso(days), size_bytes: 3100 + id.length * 90, rating: null, feedback_attempts: 1,
     messages: [
       { seq: 1, role: 'interviewer', content: QUESTION_TEMPLATES[category](DEFAULT_CTX), submitted: true, skipped: false },
@@ -220,8 +220,10 @@ export function seedInterviews() {
     },
   })
   return [ // newest first
+    mk('s4', 'metrics', 'medium', 'APM', 3, [3, 2.5, 3, 3, 4], 3.1),
     mk('s3', 'behavioral', 'easy', 'APM', 6, [4, 3.5, 3, 3.5, 4], 3.6),
     mk('s2', 'metrics', 'medium', 'APM', 14, [2.5, 2, 2, 2.5, 3.5], 2.5),
     mk('s1', 'product-sense', 'medium', 'APM', 21, [3.5, 3, 3.5, 3, 4], 3.4),
+    mk('s0', 'product-sense', 'easy', 'APM', 28, [3, 2.5, 3, 2.5, 3.5], 2.9),
   ]
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CATEGORY_LABELS, fmtBytes, fmtDate, get, type Session } from '../api'
+import { fmtBytes, interviewTitle, fmtDate, get, type Session } from '../api'
 import { Empty, ErrorBox, Meter, PageHead, Spinner, Stars, useLoad } from '../ui'
 
 export default function History() {
@@ -18,7 +18,7 @@ export default function History() {
               <tbody>{data.interviews.map((i) => (
                 <tr key={i.id}>
                   <td>{fmtDate(i.created_at)}</td>
-                  <td><b>{CATEGORY_LABELS[i.category]}</b><div className="muted small">{i.difficulty}{i.industry ? ` · ${i.industry}` : ''}</div></td>
+                  <td><b>{interviewTitle(i)}</b><div className="muted small">{i.difficulty}{i.industry ? ` · ${i.industry_name ?? i.industry}` : ''}</div></td>
                   <td>{i.level}</td>
                   <td><span className={'pill' + (i.status === 'in_progress' ? ' lime' : '')}>{i.status === 'in_progress' ? 'In progress' : i.feedback_status === 'ready' ? 'Report ready' : i.feedback_status === 'not_available' ? 'No score' : 'Report pending'}</span></td>
                   <td>{i.rating ? <Stars value={i.rating.rating} /> : <span className="muted">Not rated</span>}</td>

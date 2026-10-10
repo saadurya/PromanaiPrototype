@@ -202,3 +202,55 @@ table.t th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .influence i { width: 14px; height: 14px; border-radius: 4px; background: var(--violet-soft); }
 .influence i.on { background: var(--violet); }
 .tier-must { background: var(--violet); color: #fff; } .tier-should { background: var(--lime); color: var(--violet-deep); } .tier-could { background: var(--violet-soft); color: var(--violet-mid); }
+
+/* warning banner (unsupported browser) */
+.banner.warn { background: var(--danger-soft); border: 1px solid #f3bccd; color: var(--danger); }
+/* completed setup steps are buttons, so users can jump back */
+button.step { background: none; border: 0; font: inherit; padding: 0; cursor: pointer; }
+button.step:hover { color: var(--ink); text-decoration: underline; }
+/* distraction-free interview */
+.focus-shell { min-height: 100%; }
+.focus-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px clamp(18px, 4vw, 52px); background: var(--violet-deep); color: #b8a8f0; }
+.focus-bar .brand { font-size: 1.1rem; }
+.focus-bar .btn.ghost { color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+.focus-bar .btn.ghost:hover { background: rgba(255, 255, 255, 0.1); }
+.focus-main { margin: 0 auto; }
+/* progress */
+.prog-row { display: grid; grid-template-columns: minmax(110px, 1fr) 160px 52px minmax(0, auto); align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.prog-score b { font-family: var(--font-display); font-size: 1.35rem; }
+@media (max-width: 600px) { .prog-row { grid-template-columns: 1fr auto; } .prog-row .trend { grid-column: 1 / -1; } }
+.trend { display: block; overflow: visible; }
+.trend-guide { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
+.trend-line { fill: none; stroke: var(--violet); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.trend-dot { fill: var(--violet); stroke: #fff; stroke-width: 2; }
+.trend-hit { fill: transparent; }
+/* disclaimer page and landing footer */
+.doc { max-width: 760px; margin: 0 auto; padding: 32px clamp(16px, 4vw, 40px) 64px; display: grid; gap: 22px; }
+.land-foot { max-width: 1320px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 64px) 32px; }
+
+/* long modals scroll inside the viewport */
+.modal { max-height: calc(100vh - 40px); overflow-y: auto; }
+.modal.wide { max-width: 640px; }
+/* AI tools catalogue */
+.tool-card { text-decoration: none; color: inherit; display: grid; gap: 10px; align-content: start; }
+.tool-card:hover { border-color: var(--violet); box-shadow: 0 8px 24px rgba(106, 61, 240, 0.12); }
+.rating-big { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1; }
+.bar-row { display: grid; grid-template-columns: 34px 1fr 28px; gap: 10px; align-items: center; }
+.chip { font: inherit; font-size: 0.85rem; font-weight: 600; background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; color: var(--muted); }
+.chip.on { background: var(--violet); border-color: var(--violet); color: #fff; }
+
+/* clarifying exchanges in the interview: visibly different, not scored */
+.msg.clarify { border: 1.5px dashed var(--violet); opacity: 0.9; }
+/* per-answer feedback in the report */
+.qa { display: grid; gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.qa:last-child { border-bottom: 0; }
+.qa ul { margin: 0; padding-left: 20px; }
+
+/* feedback quotes: the candidate's own words, verbatim */
+.quote { margin: 2px 0 0; padding: 8px 12px; border-left: 3px solid var(--violet); background: var(--violet-soft); border-radius: 0 10px 10px 0; font-size: 0.9rem; font-style: italic; color: var(--ink); }
+.quote-label { display: block; font-style: normal; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+.link-btn { background: none; border: 0; padding: 0; margin-left: 8px; font: inherit; font-size: 0.82rem; font-style: normal; color: var(--violet-mid); text-decoration: underline; cursor: pointer; }
+.point { display: grid; gap: 4px; }
+.mark { display: inline-block; width: 1.1em; font-weight: 800; }
+.mark.ok { color: var(--ok); } .mark.miss { color: var(--danger); }
+.msg.flash { outline: 3px solid var(--lime); outline-offset: 3px; }

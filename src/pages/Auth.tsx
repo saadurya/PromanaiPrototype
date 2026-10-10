@@ -28,6 +28,7 @@ export default function Auth({ mode }: { mode: 'login' | 'signup' }) {
         ) : (
           <p className="small muted">New accounts start unverified: you can look around, but starting an interview needs email verification. <Link to="/login">Log in instead</Link></p>
         )}
+        {mode === 'signup' && <p className="small muted">ProManAI is a practice tool: AI feedback can be wrong and is not a hiring assessment. <Link to="/disclaimer">Read the disclaimer</Link></p>}
         <p className="small muted">Prototype: any email and password signs you in.</p>
       </form>
     </div>
