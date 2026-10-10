@@ -161,6 +161,7 @@ table.t th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .msg.interviewer { background: var(--violet-soft); border-top-left-radius: 4px; }
 .msg.candidate { background: #fff; border: 1px solid var(--line); justify-self: end; border-top-right-radius: 4px; }
 .msg.skipped { opacity: 0.55; text-decoration: line-through; }
+.msg.unsent { border-style: dashed; color: var(--muted); }
 .msg small { display: block; color: var(--muted); margin-bottom: 2px; font-weight: 600; }
 .mic-btn { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--violet); color: #fff; cursor: pointer; font-size: 1.2rem; flex: none; }
 .mic-btn.rec { background: var(--danger); animation: pulse 1.2s infinite; }

@@ -1,22 +1,27 @@
 import { Link, useLocation } from 'react-router-dom'
-import { CATEGORY_LABELS, engine, fmtDate, get, post, type Session } from '../api'
+import { CATEGORY_LABELS, engine, fmtDate, get, post, type Session, type Storage } from '../api'
 import { useAuth } from '../auth'
 import { Empty, ErrorBox, Meter, PageHead, Spinner, useAction, useLoad, useToast } from '../ui'
 
 export default function Dashboard() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, devVerifyUrl: devLink, setDevVerifyUrl: setDevLink } = useAuth()
   const toast = useToast()
   const needVerify = (useLocation().state as { needVerify?: boolean } | null)?.needVerify
-  const list = useLoad(() => get<{ interviews: Session[]; storage: { used: number; limit: number } }>('/interviews'))
+  const list = useLoad(() => get<{ interviews: Session[]; storage: Storage }>('/interviews'))
   const act = useLoad(() => engine<{ active: Session | null }>({ action: 'status' }))
-  const verify = useAction(async () => { const r = await post('/auth/verify'); setUser(r.user); toast('Email verified') })
+  const verify = useAction(async () => {
+    const r = await post('/auth/resend-verification')
+    if (r.user) { setUser(r.user); return }
+    toast(`Verification email sent to ${user?.email}`)
+    if (r.dev_verify_url) setDevLink(r.dev_verify_url)
+  })
   const recent = list.data?.interviews.slice(0, 3) ?? []
   return (
     <>
       <PageHead title={`Hi ${user?.name.split(' ')[0]}, ready to practise?`} sub="One 20-minute spoken interview, a scored report, and a record of how you are improving." right={<Link className="btn lime lg" to="/interview/setup">Start new interview</Link>} />
       <div className="stack lg">
         {!user?.verified && (
-          <div className="banner info"><span>{needVerify ? 'Verify your email first: starting an interview is locked until you do.' : 'Your email is not verified yet. You can browse, but you cannot start an interview.'}</span><button className="btn sm" onClick={() => verify.run()} disabled={verify.busy}>Verify email (prototype)</button></div>
+          <div className="banner info"><span>{needVerify ? 'Verify your email first: starting an interview is locked until you do.' : 'Your email is not verified yet. You can browse, but you cannot start an interview.'}</span><div className="row"><button className="btn sm" onClick={() => verify.run()} disabled={verify.busy}>Resend verification email</button>{devLink && <Link className="btn sm ghost" to={devLink}>Open the emailed link (prototype)</Link>}</div></div>
         )}
         <ErrorBox error={verify.error} />
         {act.data?.active && (
@@ -33,6 +38,7 @@ export default function Dashboard() {
                 <span className="pill">{i.feedback_status === 'ready' ? 'Report ready' : i.status === 'in_progress' ? 'In progress' : 'No score'}</span>
               </Link>
             ))}
+            {list.data?.storage.full && <div className="err" role="alert"><span>Storage is full, so you cannot start a new interview.</span><Link className="btn sm ghost" to="/history">Free up space</Link></div>}
             {list.data && <div><div className="row between small muted"><span>Storage</span><span>{Math.round((list.data.storage.used / 1024) * 10) / 10} KB of {list.data.storage.limit / 1024 / 1024} MB</span></div><Meter pct={(list.data.storage.used / list.data.storage.limit) * 100} /></div>}
           </section>
           <section className="card stack">

@@ -1,21 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CATEGORY_LABELS, fmtDate, get, post, type Feedback, type Msg, type Session } from '../api'
+import { CATEGORY_LABELS, fmtDate, get, post } from '../api'
+import { downloadReport, type ReportData } from '../report'
 import { Empty, ErrorBox, PageHead, Spinner, Stars, useAction, useToast } from '../ui'
 
-type Data = { session: Session; messages: Msg[]; feedback: Feedback | null }
-
-function reportText(d: Data) {
-  const { session: s, feedback: f, messages } = d
-  const lines = [`ProManAI interview report`, `${CATEGORY_LABELS[s.category]} · ${s.level} · ${s.difficulty} · ${fmtDate(s.created_at)}`, '']
-  if (f) {
-    lines.push(`Overall score: ${f.overall_score}/5`, f.explanation, '', 'Competencies')
-    f.competency_scores.forEach((c) => lines.push(`- ${c.name}: ${c.score}/5. ${c.explanation}`))
-    lines.push('', 'Strengths', ...f.strengths.map((x) => `- ${x}`), '', 'Areas to improve', ...f.improvement_areas.map((x) => `- ${x}`), '', 'Suggestions', ...f.suggestions.map((x) => `- ${x}`))
-  }
-  lines.push('', 'Transcript', ...messages.map((m) => `${m.role === 'interviewer' ? 'Interviewer' : 'You'}: ${m.content}`))
-  return lines.join('\n')
-}
+type Data = ReportData
 
 export default function Report() {
   const { id } = useParams()
@@ -40,7 +29,7 @@ export default function Report() {
   if (error && !d) return <ErrorBox error={error} onRetry={load} />
   if (!d) return <Spinner />
   const { session: s, feedback: f, messages } = d
-  const download = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([reportText(d)], { type: 'text/plain' })); a.download = `promanai-${s.category}-${s.id}.txt`; a.click(); URL.revokeObjectURL(a.href) }
+  const download = () => downloadReport(d)
   const st = s.feedback_status
   return (
     <>
@@ -77,7 +66,7 @@ export default function Report() {
           </section>
         )}
         <section className="card stack"><h2>Transcript</h2>
-          <div className="convo" style={{ maxHeight: 'none' }}>{messages.map((m) => <div key={m.seq} className={`msg ${m.role}${m.skipped ? ' skipped' : ''}`}><small>{m.role === 'interviewer' ? 'Interviewer' : 'You'}</small>{m.content}</div>)}</div>
+          <div className="convo" style={{ maxHeight: 'none' }}>{messages.map((m) => <div key={m.seq} className={`msg ${m.role}${m.skipped ? ' skipped' : ''}${m.submitted === false ? ' unsent' : ''}`}><small>{m.role === 'interviewer' ? 'Interviewer' : m.submitted === false ? 'You · not submitted, not scored' : 'You'}</small>{m.content}</div>)}</div>
         </section>
       </div>
     </>

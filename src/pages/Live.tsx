@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ApiError, CATEGORY_LABELS, engine, type Msg, type Session } from '../api'
+import { ApiError, CATEGORY_LABELS, engine, loadDraft, storeDraft, type Draft, type Msg, type Session } from '../api'
 import { ErrorBox, Modal, Spinner } from '../ui'
 import { SAMPLE_ANSWERS, speak, stopSpeaking, useRecognizer } from '../voice'
 
 const mmss = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` }
 const MAX_SKIPS = 2
+const AUTOSAVE_MS = 1500
 
 export default function Live() {
   const nav = useNavigate()
@@ -22,6 +23,8 @@ export default function Live() {
   const [serverDown, setServerDown] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [silent, setSilent] = useState(false)
+  const [saved, setSaved] = useState<'' | 'saving' | 'saved' | 'local'>('')
+  const dirty = useRef(false) // the server copy of the draft is behind what is on screen
   const textRef = useRef(text); textRef.current = text
   const lastActive = useRef(Date.now())
   const convoRef = useRef<HTMLDivElement>(null)
@@ -29,14 +32,23 @@ export default function Live() {
   const sessionId = session?.id
   const touch = () => { lastActive.current = Date.now(); setSilent(false) }
 
-  const rec = useRecognizer(useCallback((t: string) => { setText(t); touch() }, []), useCallback(() => textRef.current, []))
+  const rec = useRecognizer(useCallback((t: string) => { dirty.current = true; setText(t); touch() }, []), useCallback(() => textRef.current, []))
 
   const applyServer = useCallback((s: Session, m?: Msg[]) => { setSession(s); setRemaining(s.timer_remaining_ms); if (m) setMsgs(m) }, [])
+
+  // Restore the unsubmitted answer for the open question: the newer of the server copy and this device's copy.
+  const restoreDraft = useCallback((id: string, m: Msg[], server: Draft | null) => {
+    const q = m.at(-1)
+    if (q?.role !== 'interviewer') return
+    const pick = [server, loadDraft(id)].filter((d): d is Draft => !!d && d.for_seq === q.seq && !!d.text.trim()).sort((a, b) => b.at - a.at)[0]
+    if (pick) { setText(pick.text); setSaved('saved'); dirty.current = pick !== server }
+  }, [])
 
   const finish = useCallback(async (reason: 'user_ended' | 'time_up') => {
     if (ending.current || !sessionId) return
     ending.current = true; stopSpeaking(); rec.stop()
-    try { await engine({ action: 'end', id: sessionId, reason }) } catch (e) { if ((e as ApiError).code !== 'not_running') { ending.current = false; setError(e); return } }
+    try { await engine({ action: 'end', id: sessionId, reason, draft: textRef.current, at: Date.now() }) } catch (e) { if ((e as ApiError).code !== 'not_running') { ending.current = false; setError(e); return } }
+    storeDraft(sessionId, null)
     nav(`/history/${sessionId}`, { replace: true })
   }, [sessionId, nav, rec])
 
@@ -47,7 +59,7 @@ export default function Live() {
       if (fresh) {
         nav('/interview/live', { replace: true, state: {} })
         const x = await engine({ action: 'resume', id: r.active.id })
-        applyServer(x.session, x.messages); setBoot('ready')
+        applyServer(x.session, x.messages); restoreDraft(r.active.id, x.messages, x.draft); setBoot('ready')
         const q = [...x.messages].reverse().find((m: Msg) => m.role === 'interviewer'); q && speak(q.content)
       } else { setSession(r.active); setRemaining(r.active.timer_remaining_ms); setBoot('prompt') }
     }).catch((e) => { setError(e); setBoot('ready') })
@@ -56,8 +68,26 @@ export default function Live() {
   }, [])
 
   const resume = async () => {
-    try { const x = await engine({ action: 'resume', id: session!.id }); applyServer(x.session, x.messages); setBoot('ready'); touch() } catch (e) { setError(e) }
+    try { const x = await engine({ action: 'resume', id: session!.id }); applyServer(x.session, x.messages); restoreDraft(session!.id, x.messages, x.draft); setBoot('ready'); touch() } catch (e) { setError(e) }
   }
+
+  // Autosave: every change lands on this device at once and on the server shortly after.
+  const lastIsAnswer = msgs.at(-1)?.role === 'candidate'
+  const openSeq = !lastIsAnswer ? msgs.at(-1)?.seq : undefined
+  const syncDraft = useCallback(async () => {
+    if (!sessionId || !dirty.current || ending.current) return
+    if (!navigator.onLine) { setSaved('local'); return }
+    setSaved('saving')
+    try { await engine({ action: 'save_draft', id: sessionId, text: textRef.current, at: Date.now() }); dirty.current = false; setSaved('saved') }
+    catch { setSaved('local') }
+  }, [sessionId])
+  useEffect(() => {
+    if (boot !== 'ready' || !sessionId || openSeq === undefined || !dirty.current) return
+    storeDraft(sessionId, { text, for_seq: openSeq, at: Date.now() })
+    const t = setTimeout(syncDraft, AUTOSAVE_MS)
+    return () => clearTimeout(t)
+  }, [text, boot, sessionId, openSeq, syncDraft])
+  const edit = (t: string) => { dirty.current = true; setText(t) }
 
   // online/offline
   useEffect(() => {
@@ -82,17 +112,16 @@ export default function Live() {
     if (boot !== 'ready' || !sessionId) return
     const beat = async () => {
       if (!navigator.onLine) return
-      try { const x = await engine({ action: 'heartbeat', id: sessionId }); setServerDown(false); setRemaining(x.session.timer_remaining_ms); if (x.session.status !== 'in_progress') nav(`/history/${sessionId}`, { replace: true }) }
+      try { const x = await engine({ action: 'heartbeat', id: sessionId }); setServerDown(false); setRemaining(x.session.timer_remaining_ms); if (x.session.status !== 'in_progress') nav(`/history/${sessionId}`, { replace: true }); else syncDraft() }
       catch (e) { const c = (e as ApiError).code; if (c === 'network') setServerDown(true); else if (c === 'not_running') nav(`/history/${sessionId}`, { replace: true }) }
     }
     const t = setInterval(beat, 10_000)
     window.addEventListener('online', beat)
     return () => { clearInterval(t); window.removeEventListener('online', beat) }
-  }, [boot, sessionId, nav])
+  }, [boot, sessionId, nav, syncDraft])
 
   useEffect(() => { convoRef.current?.scrollTo({ top: convoRef.current.scrollHeight, behavior: 'smooth' }) }, [msgs.length, phase])
 
-  const lastIsAnswer = msgs.at(-1)?.role === 'candidate'
   const lastQuestion = [...msgs].reverse().find((m) => m.role === 'interviewer')
 
   const getNext = async () => {
@@ -107,7 +136,7 @@ export default function Live() {
     rec.stop(); stopSpeaking(); setPhase('analyzing'); setError(null)
     try {
       const x = await engine({ action: 'submit_answer', id: sessionId, text })
-      applyServer(x.session); setMsgs((m) => [...m, x.message]); setText('')
+      applyServer(x.session); setMsgs((m) => [...m, x.message]); setText(''); dirty.current = false; setSaved(''); storeDraft(sessionId!, null)
     } catch (e) { setError(e); setPhase('idle'); return }
     await getNext()
   }
@@ -116,11 +145,12 @@ export default function Live() {
     try {
       const x = await engine({ action: 'skip', id: sessionId })
       applyServer(x.session); setMsgs((m) => [...m.slice(0, -1), { ...m[m.length - 1], skipped: true }, x.message]); speak(x.message.content); touch()
+      setText(''); dirty.current = false; setSaved(''); storeDraft(sessionId!, null)
     } catch (e) { setError(e) } finally { setPhase('idle') }
   }
   const sample = () => {
     const pool = SAMPLE_ANSWERS[session!.category]; const n = msgs.filter((m) => m.role === 'candidate').length
-    setText(pool[n % pool.length]); touch()
+    edit(pool[n % pool.length]); touch()
   }
 
   if (boot === 'loading') return <div style={{ padding: 40 }}>{error ? <ErrorBox error={error} /> : <Spinner />}</div>
@@ -159,8 +189,8 @@ export default function Live() {
           <ErrorBox error={error} onRetry={lastIsAnswer && sessionId ? getNext : undefined} />
           {lastIsAnswer && !busy && !error && <div className="banner info"><span>Your answer is saved. The next question has not loaded yet.</span><button className="btn sm" onClick={getNext}>Get next question</button></div>}
           <div className="card stack">
-            <label className="field" htmlFor="ans">Your answer <span className="muted small" style={{ fontWeight: 400 }}>Speak, then edit anything the mic got wrong</span></label>
-            <textarea id="ans" value={text} onChange={(e) => { setText(e.target.value); touch() }} placeholder={rec.listening ? 'Listening…' : 'Press Start speaking and answer out loud.'} disabled={busy || lastIsAnswer} rows={5} />
+            <div className="row between"><label className="field" htmlFor="ans">Your answer <span className="muted small" style={{ fontWeight: 400 }}>Speak, then edit anything the mic got wrong</span></label><span className="small muted" aria-live="polite">{{ '': '', saving: 'Saving…', saved: 'Draft saved', local: 'Saved on this device. Will sync when you reconnect.' }[saved]}</span></div>
+            <textarea id="ans" value={text} onChange={(e) => { edit(e.target.value); touch() }} placeholder={rec.listening ? 'Listening…' : 'Press Start speaking and answer out loud.'} disabled={busy || lastIsAnswer} rows={5} />
             {rec.error && <div className="err" role="alert">{rec.error}</div>}
             <div className="row between">
               <div className="row">

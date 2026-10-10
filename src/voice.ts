@@ -1,20 +1,33 @@
 // Browser voice helpers. Real Web Speech APIs where the browser has them (Chrome/Edge); otherwise callers offer the prototype fallback.
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const SR: any = typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null
+export const SR: any = typeof window !== 'undefined' ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition : null
 export const recognitionSupported = !!SR
 
-export function speak(text: string) {
-  try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)) } catch { /* silent: Replay stays available */ }
+// Voice answers need desktop Chrome or Edge: other browsers either lack speech recognition or ship one that fails mid-answer.
+export function browserSupport(): { ok: boolean; name: string } {
+  const nav = navigator as any
+  const ua = navigator.userAgent
+  const brands: string[] = nav.userAgentData?.brands?.map((b: { brand: string }) => b.brand) ?? []
+  if (nav.userAgentData?.mobile || /Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return { ok: false, name: 'a mobile browser' }
+  if (nav.brave || brands.some((b) => /Brave|Opera/.test(b)) || /OPR\//.test(ua)) return { ok: false, name: nav.brave || brands.includes('Brave') ? 'Brave' : 'Opera' }
+  const edge = brands.includes('Microsoft Edge') || /Edg\//.test(ua)
+  const chrome = brands.includes('Google Chrome') || (/Chrome\//.test(ua) && !edge && !!(window as any).chrome)
+  if (!edge && !chrome) return { ok: false, name: /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'this browser' }
+  return { ok: !!SR, name: edge ? 'Edge' : 'Chrome' }
 }
-export const stopSpeaking = () => { try { window.speechSynthesis.cancel() } catch { /* noop */ } }
 
-const ERRORS: Record<string, string> = {
+export const ERRORS: Record<string, string> = {
   'no-speech': 'We did not hear anything. Move closer to the mic and try again.',
   'audio-capture': 'No microphone was found. Check that one is connected.',
   'not-allowed': 'Microphone access is blocked. Allow it in your browser settings and try again.',
   network: 'Speech recognition lost its connection. Try again.',
 }
+
+export function speak(text: string) {
+  try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)) } catch { /* silent: Replay stays available */ }
+}
+export const stopSpeaking = () => { try { window.speechSynthesis.cancel() } catch { /* noop */ } }
 
 export function useRecognizer(onText: (t: string) => void, getBase: () => string) {
   const [listening, setListening] = useState(false)

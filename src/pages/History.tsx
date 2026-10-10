@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { CATEGORY_LABELS, fmtBytes, fmtDate, get, type Session } from '../api'
+import { CATEGORY_LABELS, fmtBytes, fmtDate, get, type Session, type Storage } from '../api'
+import StorageCleanup from '../StorageCleanup'
 import { Empty, ErrorBox, Meter, PageHead, Spinner, Stars, useLoad } from '../ui'
 
 export default function History() {
-  const { data, loading, error, reload } = useLoad(() => get<{ interviews: Session[]; storage: { used: number; limit: number } }>('/interviews'))
+  const { data, loading, error, reload } = useLoad(() => get<{ interviews: Session[]; storage: Storage }>('/interviews'))
   return (
     <>
       <PageHead title="History" sub="Every finished interview and its report. Only text is stored, never audio." />
@@ -11,7 +12,7 @@ export default function History() {
       <ErrorBox error={error} onRetry={reload} />
       {data && (
         <div className="stack lg">
-          <div className="card"><div className="row between small"><b>Storage</b><span className="muted">{fmtBytes(data.storage.used)} of {fmtBytes(data.storage.limit)}</span></div><Meter pct={(data.storage.used / data.storage.limit) * 100} /></div>
+          {data.storage.full ? <StorageCleanup onFreed={reload} /> : <div className="card"><div className="row between small"><b>Storage</b><span className="muted">{fmtBytes(data.storage.used)} of {fmtBytes(data.storage.limit)}</span></div><Meter pct={(data.storage.used / data.storage.limit) * 100} /></div>}
           {data.interviews.length === 0 ? <Empty title="Nothing here yet">Finish an interview and its report will be saved here.<Link className="btn" to="/interview/setup">Start an interview</Link></Empty> : (
             <div className="card"><table className="t">
               <thead><tr><th>Date</th><th>Category</th><th>Level</th><th>Status</th><th>Rating</th><th /></tr></thead>
