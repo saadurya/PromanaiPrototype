@@ -25,12 +25,17 @@ export default function Home() {
         <div className="banner info"><span><b>Interview in progress:</b> {CATEGORY_LABELS[act.data.active.category]}, {act.data.active.difficulty}.</span><Link className="btn sm" to="/interview/live">Resume</Link></div>
       )}
       {list.data?.storage.full && <div className="err" role="alert"><span>Storage is full, so you cannot start a new interview.</span><Link className="btn sm ghost" to="/history">Free up space</Link></div>}
-      <div className="open">
+      <div className="open center">
         <p className="open-hi">Hi {user?.name.split(' ')[0]}</p>
         <h1>Practice your PM interview with AI.</h1>
         <p className="open-sub">A prototype interview flow with sample questions, follow-ups and a scored feedback report.</p>
         <Link className="btn lime lg" to="/interview/setup">Start an interview</Link>
         <span className="sample-chip">Prototype with sample data</span>
+        <div className="steps">
+          <div className="step"><b>1 · Set up</b><span className="muted small">Pick your level, industry and focus</span></div>
+          <div className="step"><b>2 · Interview</b><span className="muted small">Sample questions and follow-ups, simulated for now</span></div>
+          <div className="step"><b>3 · Review</b><span className="muted small">A scored report and what to learn next</span></div>
+        </div>
       </div>
     </div>
   )

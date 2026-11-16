@@ -220,3 +220,9 @@ table.t th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .side-close:hover { background: rgba(255, 255, 255, 0.22); }
 .side-head { display: flex; align-items: center; padding-right: 0; }
 .backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(30, 17, 64, 0.45); border: none; padding: 0; cursor: default; }
+
+/* centered home hero + steps (owner-approved layout) */
+.open.center { max-width: 720px; margin-left: auto; margin-right: auto; justify-items: center; text-align: center; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 26px; width: 100%; }
+.step { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 4px; text-align: left; }
+@media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
