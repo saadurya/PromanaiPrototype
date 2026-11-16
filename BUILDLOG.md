@@ -33,3 +33,12 @@ What was actually changed, tested and decided, per working session. Jira tracks 
 
 **Review**
 - Walkthrough videos and screenshots shared on WhatsApp (Nov 16). Branch preview link pending push approval.
+
+## Nov 16 (later): landing demo entry (owner-approved)
+
+- Landing page keeps its existing design, but the signed-out call-to-action is now a single "Login" button (header and hero). Clicking it signs into the sample account (demo@promanai.dev) and opens the refined home page directly - a demo entry for reviewers, not real authentication. The real /login and /signup pages are unchanged.
+- Replaced the old "Start free" and "I already have an account" buttons per owner direction.
+- `npx tsc --noEmit` clean; `npm run build` clean.
+
+**Review**
+- Branch pushed to GitHub (`three-pillar-rework`); Vercel preview verified live at the branch preview URL. Production/main unchanged.
