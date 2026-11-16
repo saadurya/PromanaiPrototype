@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CATEGORY_LABELS, fmtDate, get, post } from '../api'
 import { downloadReport, type ReportData } from '../report'
-import { Empty, ErrorBox, PageHead, Spinner, Stars, useAction, useToast } from '../ui'
+import { Empty, ErrorBox, PageHead, Spinner, Stars, useAction, useLoad, useToast } from '../ui'
 
 type Data = ReportData
+type Res = { id: string; title: string; type: string; tier: 'must' | 'should' | 'could'; minutes: number; topics: string[]; score: number }
+const TIER = { must: 'Must know', should: 'Should know', could: 'Could know' }
+// Which learning topic best matches a feedback gap. Communication appears in every category, so it maps to behavioral practice.
+const gapTopic = (area: string, category: string) => (area.toLowerCase() === 'communication' ? 'behavioral' : category)
 
 export default function Report() {
   const { id } = useParams()
@@ -14,6 +18,8 @@ export default function Report() {
   const [stars, setStars] = useState(0)
   const [comment, setComment] = useState('')
   const asked = useRef(false)
+  const resLoad = useLoad(() => get<{ resources: Res[] }>('/resources'))
+  const inds = useLoad(() => get<{ industries: { id: string; name: string }[] }>('/industries'))
 
   const load = async () => { try { const x = await get<Data>(`/interviews/${id}`); setD(x); setError(null); return x } catch (e) { setError(e) } }
   const requestReport = async () => { try { await post('/interview-feedback', { id }); await load() } catch (e) { setError(e) } }
@@ -33,7 +39,7 @@ export default function Report() {
   const st = s.feedback_status
   return (
     <>
-      <PageHead title={`${CATEGORY_LABELS[s.category]} report`} sub={`${s.level} · ${s.difficulty}${s.industry ? ' · ' + s.industry : ''} · ${fmtDate(s.created_at)}`} right={<div className="row"><Link className="btn ghost" to="/history">All interviews</Link>{f && <button className="btn" onClick={download}>Download .txt</button>}</div>} />
+      <PageHead title={`${CATEGORY_LABELS[s.category]} report`} sub={`${s.level} · ${s.difficulty}${s.industry ? ' · ' + (inds.data?.industries.find((x) => x.id === s.industry)?.name || s.industry) : ''} · ${fmtDate(s.created_at)}`} right={<div className="row"><Link className="btn ghost" to="/history">All interviews</Link>{f && <button className="btn" onClick={download}>Download .txt</button>}</div>} />
       <div className="stack lg">
         {(st === 'pending' || st === 'none') && <div className="card row"><Spinner /> <b>Preparing your feedback report…</b><span className="muted">This takes a few seconds.</span></div>}
         {st === 'failed' && <div className="err" role="alert"><span>The report could not be generated. Your interview and transcript are safe.</span><button className="btn sm ghost" onClick={requestReport}>Retry feedback</button></div>}
@@ -50,8 +56,25 @@ export default function Report() {
             </section>
             <div className="stack">
               <section className="card stack"><h2>Strengths</h2><ul className="list-plain">{f.strengths.map((x) => <li key={x}>{x}</li>)}</ul></section>
-              <section className="card stack"><h2>Where to improve</h2><ul className="list-plain">{f.improvement_areas.map((x) => <li key={x}>{x}</li>)}</ul></section>
-              <section className="card stack"><h2>Next steps</h2><ul className="list-plain">{f.suggestions.map((x) => <li key={x}>{x}</li>)}</ul><Link to="/ideas/roadmap" className="small">Turn these gaps into a study plan (idea 4)</Link></section>
+              <section className="card stack"><h2>Where to improve</h2>
+                {f.improvement_areas.map((area) => {
+                  const topic = gapTopic(area, s.category)
+                  const matches = (resLoad.data?.resources ?? []).filter((r) => r.topics.includes(topic)).sort((a, b) => b.score - a.score).slice(0, 2)
+                  return (
+                    <div key={area} className="stack" style={{ gap: 6 }}>
+                      <b>{area}</b>
+                      {resLoad.loading ? <span className="small muted">Finding matching resources…</span> : matches.length === 0 ? <span className="small muted">No sample resources matched this gap yet.</span> : matches.map((r) => (
+                        <div key={r.id} className="row between small" style={{ borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
+                          <span>{r.title} <span className="muted">· {r.minutes} min · {TIER[r.tier]}</span></span>
+                          <Link to={`/roadmap?topic=${topic}`}>Open in roadmap</Link>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+                <span className="small muted">Sample resources; links are placeholders in this prototype.</span>
+              </section>
+              <section className="card stack"><h2>Next steps</h2><ul className="list-plain">{f.suggestions.map((x) => <li key={x}>{x}</li>)}</ul><Link to="/roadmap" className="small">Turn these gaps into a study plan</Link></section>
             </div>
           </div>
         </>)}

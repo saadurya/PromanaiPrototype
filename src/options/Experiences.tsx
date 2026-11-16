@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { get, post } from '../api'
 import { Empty, ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad } from '../ui'
 
@@ -7,6 +8,15 @@ type Review = { rating: number; verdict: string; comment: string; reviewer: { na
 type Exp = { id: string; company: string; role: string; industry: string; round: string; level: string; outcome: string; posted: string; author: string; summary: string; turns: Turn[]; reviews: Review[]; helpfulCount: number; helpedByMe: boolean; avgExpert: number | null }
 const INDUSTRIES = ['FinTech', 'E-commerce', 'EdTech', 'HealthTech', 'SaaS', 'Consumer Tech', 'Social Media', 'Entertainment', 'Travel', 'Communication']
 const ROUNDS = ['Product sense', 'Execution', 'Metrics', 'Strategy', 'Behavioral']
+// Connector: turn a shared experience into a practice interview with the same round and industry.
+const ROUND_TO_CATEGORY: Record<string, string> = { 'Product sense': 'product-sense', Execution: 'execution', Metrics: 'metrics', Strategy: 'strategy', Behavioral: 'behavioral' }
+const INDUSTRY_TO_ID: Record<string, string> = { FinTech: 'fintech', 'E-commerce': 'ecommerce', EdTech: 'edtech', HealthTech: 'healthtech', SaaS: 'saas', 'Consumer Tech': 'consumer', 'Social Media': 'social', Entertainment: 'entertainment', Travel: 'travel', Communication: 'communication' }
+const practiceLink = (e: { round: string; industry: string }) => {
+  const q = new URLSearchParams()
+  if (ROUND_TO_CATEGORY[e.round]) q.set('category', ROUND_TO_CATEGORY[e.round])
+  if (INDUSTRY_TO_ID[e.industry]) q.set('industry', INDUSTRY_TO_ID[e.industry])
+  return `/interview/setup?${q.toString()}`
+}
 
 export default function Experiences() {
   const { data, loading, error, reload } = useLoad(() => get<{ experiences: Exp[] }>('/experiences'))
@@ -44,6 +54,7 @@ export default function Experiences() {
               <section className="card stack">
                 <div className="row between"><div><h2>{open.company}</h2><p className="muted small">{open.role} · {open.industry} · {open.round} round · shared by {open.author}</p></div>
                   <button className={'btn sm' + (open.helpedByMe ? '' : ' ghost')} onClick={() => helpful.run(open.id)}>{open.helpedByMe ? 'Marked helpful' : 'This helped me'}</button></div>
+                <div className="row"><Link className="btn sm lime" to={practiceLink(open)}>Practise a {open.round} interview in {open.industry}</Link></div>
                 <div>{open.turns.map((t, i) => <div key={i} className={'turn' + (t.speaker === 'candidate' ? ' cand' : '')}><span className="who">{t.speaker === 'interviewer' ? 'Interviewer' : 'Candidate'}</span><div>{t.text}{t.note && <div className="note-tag">{t.note}</div>}</div></div>)}</div>
                 <div className="row between"><h3>Expert evaluation</h3><button className="btn sm ghost" onClick={() => setReview(true)}>Rank this as an expert</button></div>
                 {open.reviews.length === 0 && <p className="muted">No expert has ranked this yet.</p>}

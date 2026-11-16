@@ -11,20 +11,10 @@ import History from './pages/History'
 import Settings from './pages/Settings'
 import VerifyEmail from './pages/VerifyEmail'
 import { VoiceTest, AiTest } from './pages/Sandbox'
-import Hub from './options/Hub'
-import Industry from './options/Industry'
 import Experiences from './options/Experiences'
 import PeerMocks from './options/PeerMocks'
 import Roadmap from './options/Roadmap'
 import AiTools from './options/AiTools'
-
-const OPTIONS = [
-  { to: '/ideas/industry', n: 1, label: 'Industry selection' },
-  { to: '/ideas/experiences', n: 2, label: 'Interview experiences' },
-  { to: '/ideas/peer-mocks', n: 3, label: 'Peer mock interviews' },
-  { to: '/ideas/roadmap', n: 4, label: 'Resources and roadmap' },
-  { to: '/ideas/ai-tools', n: 5, label: 'PM AI tools' },
-]
 
 function Shell() {
   const { user, signOut } = useAuth()
@@ -37,13 +27,17 @@ function Shell() {
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
           <NavLink to="/history">History</NavLink>
-          <NavLink to="/voice-test">Voice test</NavLink>
-          <NavLink to="/ai-test">AI test</NavLink>
-          <div className="nav-group">Ideas to compare</div>
-          <NavLink to="/ideas" end>Overview</NavLink>
-          {OPTIONS.map((o) => <NavLink key={o.to} to={o.to}><span className="opt-n">{o.n}</span>{o.label}</NavLink>)}
+          <div className="nav-group">Experiences</div>
+          <NavLink to="/experiences">Interview experiences</NavLink>
+          <NavLink to="/peer-mocks">Peer mock interviews</NavLink>
+          <div className="nav-group">Learn</div>
+          <NavLink to="/roadmap">Roadmap &amp; resources</NavLink>
+          <NavLink to="/ai-tools">PM AI tools</NavLink>
           <div className="nav-group">Account</div>
           <NavLink to="/settings">Settings</NavLink>
+          <div className="nav-group">Prototype checks</div>
+          <NavLink to="/voice-test">Voice test</NavLink>
+          <NavLink to="/ai-test">AI test</NavLink>
         </nav>
         <div className="side-foot"><b>{user?.name}</b>{user?.email}<br /><a href="/" onClick={(e) => { e.preventDefault(); signOut() }} style={{ color: '#d6f03b' }}>Sign out</a></div>
       </aside>
@@ -83,12 +77,17 @@ export default function App() {
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/voice-test" element={<VoiceTest />} />
-            <Route path="/ideas" element={<Hub />} />
-            <Route path="/ideas/industry" element={<Industry />} />
-            <Route path="/ideas/experiences" element={<Experiences />} />
-            <Route path="/ideas/peer-mocks" element={<PeerMocks />} />
-            <Route path="/ideas/roadmap" element={<Roadmap />} />
-            <Route path="/ideas/ai-tools" element={<AiTools />} />
+            <Route path="/experiences" element={<Experiences />} />
+            <Route path="/peer-mocks" element={<PeerMocks />} />
+            <Route path="/roadmap" element={<Roadmap />} />
+            <Route path="/ai-tools" element={<AiTools />} />
+            {/* Pre-rework "ideas to compare" routes */}
+            <Route path="/ideas" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/ideas/industry" element={<Navigate to="/interview/setup" replace />} />
+            <Route path="/ideas/experiences" element={<Navigate to="/experiences" replace />} />
+            <Route path="/ideas/peer-mocks" element={<Navigate to="/peer-mocks" replace />} />
+            <Route path="/ideas/roadmap" element={<Navigate to="/roadmap" replace />} />
+            <Route path="/ideas/ai-tools" element={<Navigate to="/ai-tools" replace />} />
           </Route>
           <Route element={<Private verified />}>
             <Route path="/interview/setup" element={<Setup />} />

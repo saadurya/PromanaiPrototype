@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ApiError, CATEGORY_LABELS, engine, loadDraft, storeDraft, type Draft, type Msg, type Session } from '../api'
-import { ErrorBox, Modal, Spinner } from '../ui'
+import { ApiError, CATEGORY_LABELS, engine, get, loadDraft, storeDraft, type Draft, type Msg, type Session } from '../api'
+import { ErrorBox, Modal, Spinner, useLoad } from '../ui'
 import { SAMPLE_ANSWERS, speak, stopSpeaking, useRecognizer } from '../voice'
 
 const mmss = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` }
@@ -19,6 +19,8 @@ export default function Live() {
   const [phase, setPhase] = useState<'idle' | 'analyzing' | 'preparing'>('idle')
   const [error, setError] = useState<unknown>(null)
   const [remaining, setRemaining] = useState(20 * 60 * 1000)
+  const inds = useLoad(() => get<{ industries: { id: string; name: string }[] }>('/industries'))
+  const industryName = (id: string | null) => inds.data?.industries.find((x) => x.id === id)?.name || id
   const [offline, setOffline] = useState(!navigator.onLine)
   const [serverDown, setServerDown] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
@@ -178,7 +180,7 @@ export default function Live() {
           </div>
         </aside>
         <section className="stack">
-          <div className="row"><span className="pill lime">{CATEGORY_LABELS[session.category]}</span><span className="pill">{session.level}</span><span className="pill">{session.difficulty}</span>{session.industry && <span className="pill line">{session.industry}</span>}</div>
+          <div className="row"><span className="pill lime">{CATEGORY_LABELS[session.category]}</span><span className="pill">{session.level}</span><span className="pill">{session.difficulty}</span>{session.industry && <span className="pill line">{industryName(session.industry)}</span>}<span className="sample-chip">Sample interview</span></div>
           <div className="card stack">
             <div className="convo" ref={convoRef} aria-live="polite">
               {msgs.map((m) => <div key={m.seq} className={`msg ${m.role}${m.skipped ? ' skipped' : ''}`}><small>{m.role === 'interviewer' ? 'Interviewer' : 'You'}</small>{m.content}</div>)}

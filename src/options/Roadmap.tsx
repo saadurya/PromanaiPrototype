@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { get, post } from '../api'
 import { ErrorBox, PageHead, Spinner, useAction, useLoad } from '../ui'
 
@@ -22,12 +22,14 @@ function ResRow({ r, onVote }: { r: Res; onVote?: (id: string, v: 1 | -1) => voi
 
 export default function Roadmap() {
   const { data, setData, loading, error, reload } = useLoad(() => get<{ resources: Res[]; gaps: Gap[] }>('/resources'))
-  const [tab, setTab] = useState<'plan' | 'dir'>('plan')
+  const [params] = useSearchParams()
+  const topicParam = params.get('topic') || ''
+  const [tab, setTab] = useState<'plan' | 'dir'>(topicParam ? 'dir' : 'plan')
   const [picked, setPicked] = useState<string[]>([])
   const [hours, setHours] = useState(4)
   const [weeks, setWeeks] = useState(3)
   const [plan, setPlan] = useState<Plan | null>(null)
-  const [topic, setTopic] = useState('')
+  const [topic, setTopic] = useState(topicParam)
   const [tier, setTier] = useState('')
   useEffect(() => { if (data && !picked.length) setPicked(data.gaps.filter((g) => g.score === null || g.score < 3.2).map((g) => g.area).slice(0, 3)) }, [data]) // eslint-disable-line
   const gen = useAction(async () => { const r = await post<Plan>('/roadmap', { areas: data!.gaps.filter((g) => picked.includes(g.area)).map((g) => ({ area: g.area, score: g.score })), hoursPerWeek: hours, weeks }); setPlan(r) })
