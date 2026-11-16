@@ -19,7 +19,7 @@ export default function Landing() {
       <header className="land-nav">
         <span className="brand"><i />ProManAI</span>
         <div className="row">
-          {user ? <Link className="btn" to="/home">Go to home</Link> : <>{loginBtn('btn ghost')}<Link className="btn" to="/signup">Sign up</Link></>}
+          {user ? <Link className="btn" to="/home">Go to home</Link> : <Link className="btn" to="/signup">Sign up</Link>}
         </div>
       </header>
       <section className="hero">
