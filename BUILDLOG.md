@@ -8,7 +8,7 @@ What was actually changed, tested and decided, per working session. Jira tracks 
 
 **What changed**
 - Navigation grouped by pillar: Practice (dashboard / new interview / history), Experiences (interview experiences / peer mocks), Learn (roadmap / PM AI tools), Account, Prototype checks. Old `/ideas/*` routes redirect.
-- Opening page is now simple: one hero plus three one-tap choices (Practice an interview / Interview experiences / Roadmap & resources). Practice goes straight to the "Set up your interview" steps. Sidebar is hidden by default behind a three-line menu button and opens as an overlay panel.
+- Opening page is now a minimal choice screen: greeting, one short headline ("What will you work on today?") and three plain choice rows (Practice an interview / Interview experiences / Roadmap & resources), no hero box or long descriptions. Practice goes straight to the "Set up your interview" steps. Sidebar is hidden by default behind a three-line menu button and opens as an overlay panel. (Revised once after owner feedback against copying the Raise reference layout.)
 - Interview setup is now five steps: Level → Industry → Focus → Microphone → Confirm. Industry step offers 10 sample industries plus "No specific industry", with the industry's fictional company/user/metric/tension card on selection.
 - Practice screen labelled "Sample interview"; simulated mic available in prototype builds so the full flow is clickable end to end.
 - Report page: each improvement area links up to two matching sample resources with "Open in roadmap" deep links (`/roadmap?topic=…` pre-filters the directory).
