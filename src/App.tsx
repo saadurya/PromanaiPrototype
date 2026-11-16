@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import { Spinner, ToastProvider } from './ui'
@@ -18,10 +19,29 @@ import AiTools from './options/AiTools'
 
 function Shell() {
   const { user, signOut } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const loc = useLocation()
+  useEffect(() => { setMenuOpen(false) }, [loc.pathname])
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
   return (
     <div className="shell">
-      <aside className="side">
+      <header className="topbar">
+        <button className="menu-btn" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.4" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
         <NavLink to="/dashboard" className="brand"><i />ProManAI</NavLink>
+      </header>
+      {menuOpen && <button className="backdrop" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
+      <aside className={'side' + (menuOpen ? ' open' : '')} aria-hidden={!menuOpen}>
+        <div className="side-head">
+          <NavLink to="/dashboard" className="brand"><i />ProManAI</NavLink>
+          <button className="side-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>✕</button>
+        </div>
         <nav className="nav" aria-label="Main">
           <div className="nav-group">Practice</div>
           <NavLink to="/dashboard">Dashboard</NavLink>
