@@ -35,6 +35,10 @@ function Shell() {
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.4" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
         <NavLink to="/dashboard" className="brand"><i />ProManAI</NavLink>
+        <nav className="topnav" aria-label="Sections">
+          <NavLink to="/experiences">Interview experiences</NavLink>
+          <NavLink to="/roadmap">Roadmap &amp; resources</NavLink>
+        </nav>
       </header>
       {menuOpen && <button className="backdrop" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
       <aside className={'side' + (menuOpen ? ' open' : '')} aria-hidden={!menuOpen}>
