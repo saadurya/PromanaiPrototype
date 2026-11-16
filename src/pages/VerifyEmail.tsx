@@ -16,14 +16,14 @@ export default function VerifyEmail() {
     if (!ready || sent.current) return // wait for the session check so a signed-in user's state updates too
     sent.current = true
     post('/auth/verify', { token: params.get('token') || '' })
-      .then((r) => { if (user && r.user.id === user.id) setUser(r.user); toast('Email verified. You can start an interview now.'); nav(user ? '/dashboard' : '/login', { replace: true }) })
+      .then((r) => { if (user && r.user.id === user.id) setUser(r.user); toast('Email verified. You can start an interview now.'); nav(user ? '/home' : '/login', { replace: true }) })
       .catch(setError)
   }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="auth-wrap">
       <div className="card auth">
         <h2>Verifying your email</h2>
-        {error ? <><ErrorBox error={error} /><Link className="btn" to={user ? '/dashboard' : '/login'}>{user ? 'Back to dashboard' : 'Log in'}</Link></> : <Spinner />}
+        {error ? <><ErrorBox error={error} /><Link className="btn" to={user ? '/home' : '/login'}>{user ? 'Back to home' : 'Log in'}</Link></> : <Spinner />}
       </div>
     </div>
   )

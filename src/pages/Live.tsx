@@ -160,7 +160,7 @@ export default function Live() {
     <Modal title="You have an interview in progress" onClose={() => {}}>
       <p>{CATEGORY_LABELS[session.category]}, {session.difficulty}. Time left: <b>{mmss(session.timer_remaining_ms)}</b>. Time spent away is not charged beyond a short gap.</p>
       <ErrorBox error={error} />
-      <div className="row"><button className="btn" onClick={resume}>Resume</button><button className="btn ghost" onClick={() => nav('/dashboard')}>Back to dashboard</button></div>
+      <div className="row"><button className="btn" onClick={resume}>Resume</button><button className="btn ghost" onClick={() => nav('/home')}>Back to home</button></div>
     </Modal>
   )
   if (!session) return null

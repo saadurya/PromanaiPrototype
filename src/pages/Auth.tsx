@@ -6,11 +6,11 @@ import { ErrorBox, useAction, useToast } from '../ui'
 export default function Auth({ mode }: { mode: 'login' | 'signup' }) {
   const { signIn } = useAuth()
   const nav = useNavigate()
-  const from = (useLocation().state as { from?: string } | null)?.from || '/dashboard'
+  const from = (useLocation().state as { from?: string } | null)?.from || '/home'
   const toast = useToast()
   const [f, setF] = useState({ name: '', email: '', password: '' })
-  const submit = useAction(async () => { await signIn(mode, f); nav(mode === 'signup' ? '/dashboard' : from, { replace: true }) })
-  const google = useAction(async () => { await signIn('google'); nav('/dashboard', { replace: true }) })
+  const submit = useAction(async () => { await signIn(mode, f); nav(mode === 'signup' ? '/home' : from, { replace: true }) })
+  const google = useAction(async () => { await signIn('google'); nav('/home', { replace: true }) })
   const on = (e: FormEvent) => { e.preventDefault(); submit.run() }
   return (
     <div className="auth-wrap">

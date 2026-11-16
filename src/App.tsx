@@ -3,6 +3,7 @@ import { NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-rou
 import { AuthProvider, useAuth } from './auth'
 import { Spinner, ToastProvider } from './ui'
 import Landing from './pages/Landing'
+import Home from './pages/Home'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
@@ -34,7 +35,7 @@ function Shell() {
         <button className="menu-btn" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.4" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
-        <NavLink to="/dashboard" className="brand"><i />ProManAI</NavLink>
+        <NavLink to="/home" className="brand"><i />ProManAI</NavLink>
         <nav className="topnav" aria-label="Sections">
           <NavLink to="/experiences">Interview experiences</NavLink>
           <NavLink to="/roadmap">Roadmap &amp; resources</NavLink>
@@ -43,14 +44,15 @@ function Shell() {
       {menuOpen && <button className="backdrop" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
       <aside className={'side' + (menuOpen ? ' open' : '')} aria-hidden={!menuOpen}>
         <div className="side-head">
-          <NavLink to="/dashboard" className="brand"><i />ProManAI</NavLink>
+          <NavLink to="/home" className="brand"><i />ProManAI</NavLink>
           <button className="side-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>✕</button>
         </div>
         <nav className="nav" aria-label="Main">
           <div className="nav-group">Practice</div>
-          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/home">Home</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
           <NavLink to="/history">History</NavLink>
+          <NavLink to="/dashboard">Dashboard</NavLink>
           <div className="nav-group">Experiences</div>
           <NavLink to="/experiences">Interview experiences</NavLink>
           <NavLink to="/peer-mocks">Peer mock interviews</NavLink>
@@ -75,13 +77,13 @@ function Private({ verified }: { verified?: boolean }) {
   const loc = useLocation()
   if (!ready) return <div style={{ padding: 40 }}><Spinner /></div>
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />
-  if (verified && !user.verified) return <Navigate to="/dashboard" replace state={{ needVerify: true }} />
+  if (verified && !user.verified) return <Navigate to="/home" replace state={{ needVerify: true }} />
   return <Shell />
 }
 function Guest() {
   const { user, ready } = useAuth()
   if (!ready) return null
-  return user ? <Navigate to="/dashboard" replace /> : <Outlet />
+  return user ? <Navigate to="/home" replace /> : <Outlet />
 }
 
 export default function App() {
@@ -96,6 +98,7 @@ export default function App() {
             <Route path="/signup" element={<Auth mode="signup" />} />
           </Route>
           <Route element={<Private />}>
+            <Route path="/home" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
@@ -106,7 +109,7 @@ export default function App() {
             <Route path="/roadmap" element={<Roadmap />} />
             <Route path="/ai-tools" element={<AiTools />} />
             {/* Pre-rework "ideas to compare" routes */}
-            <Route path="/ideas" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/ideas" element={<Navigate to="/home" replace />} />
             <Route path="/ideas/industry" element={<Navigate to="/interview/setup" replace />} />
             <Route path="/ideas/experiences" element={<Navigate to="/experiences" replace />} />
             <Route path="/ideas/peer-mocks" element={<Navigate to="/peer-mocks" replace />} />
