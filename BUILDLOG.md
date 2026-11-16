@@ -25,6 +25,8 @@ What was actually changed, tested and decided, per working session. Jira tracks 
 - Auth (SCRUM-22) and storage (SCRUM-21) designs left unchanged — open product decisions, not for the prototype to settle.
 - Simple opening page and hidden menu kept under SCRUM-11 (dashboard/navigation scope) rather than a new ticket.
 
+- The Option B homepage is an approved starting layout, not the final page: the owner plans streaks or other gamification and tighter interconnection between the non-interview pillars, which will reshape it later.
+
 **Blockers / open**
 - Branch `three-pillar-rework` is local only; push to GitHub and the Vercel branch preview await owner's approval and a repo-scoped token.
 - Login and storage product decisions remain open.
