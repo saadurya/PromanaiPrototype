@@ -25,7 +25,7 @@ export default function Dashboard() {
                 <span className="pill">{daily.xp} XP</span>
                 <span className="pill line">{daily.doneCount}/{daily.topics.length} topics today</span>
               </div>
-              <Link className="btn ghost sm" style={{ justifySelf: 'start' }} to="/daily">Open today's five topics</Link>
+              <Link className="btn ghost sm" style={{ justifySelf: 'start' }} to="/daily/topics">Open today's five topics</Link>
             </>
           )}
         </section>

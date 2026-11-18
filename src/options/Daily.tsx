@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { CATEGORY_LABELS, engine, fmtDate, get, post, type Session, type Storage } from '../api'
-import { Empty, ErrorBox, PageHead, Spinner, useAction, useLoad } from '../ui'
+import { CATEGORY_LABELS, engine, get, post, type Session } from '../api'
+import { ErrorBox, PageHead, Spinner, useAction, useLoad } from '../ui'
+import Roadmap from './Roadmap'
 
 type Topic = { id: string; category: string; label: string; xp: number; done: boolean }
 type Daily = {
@@ -24,123 +25,136 @@ const practiceLink = (e: { round: string; industry: string }) => {
   return `/interview/setup?${q.toString()}`
 }
 
-export default function Daily() {
-  const { data, setData, loading, error, reload } = useLoad(() => get<Daily>('/daily'))
-  const list = useLoad(() => get<{ interviews: Session[]; storage: Storage }>('/interviews'))
-  const exps = useLoad(() => get<{ experiences: Exp[] }>('/experiences'))
-  const peers = useLoad(() => get<Peers>('/peers'))
+// Every daily step is optional: Next continues to the next page, Skip moves on without doing this one.
+function StepNav({ next }: { next?: string }) {
+  return (
+    <div className="row between" style={{ flexWrap: 'wrap' }}>
+      <span className="small muted">Every step is optional - skip whatever you don't need today.</span>
+      {next ? (
+        <span className="row">
+          <Link className="btn ghost" to={next}>Skip</Link>
+          <Link className="btn lime" to={next}>Next</Link>
+        </span>
+      ) : (
+        <Link className="btn lime" to="/dashboard">Done · Go to Dashboard</Link>
+      )}
+    </div>
+  )
+}
+
+function ActiveBanner() {
   const act = useLoad(() => engine<{ active: Session | null }>({ action: 'status' }))
+  if (!act.data?.active) return null
+  return <div className="banner info"><span><b>Interview in progress:</b> {CATEGORY_LABELS[act.data.active.category]}, {act.data.active.difficulty}.</span><Link className="btn sm" to="/interview/live">Resume</Link></div>
+}
+
+// Page 1: interview experiences
+export function DailyExperiences() {
+  const exps = useLoad(() => get<{ experiences: Exp[] }>('/experiences'))
+  return (
+    <>
+      <PageHead title="Daily practice" sub="Interview experiences: read how a round went - what was asked, how the candidate answered, how a senior PM ranked the answers, and the outcome. Then practise the same round and industry yourself." />
+      <div className="stack lg">
+        <ActiveBanner />
+        {exps.loading ? <Spinner /> : exps.error ? <ErrorBox error={exps.error} onRetry={exps.reload} /> : (
+          <div className="grid2">
+            {(exps.data?.experiences ?? []).slice(0, 4).map((e) => (
+              <div key={e.id} className="card stack">
+                <div className="row between"><h3>{e.company}</h3><span className={'pill ' + (e.outcome === 'Offer' ? 'ok' : 'line')}>{e.outcome}</span></div>
+                <p className="small muted">{e.role} · {e.industry} · {e.round}</p>
+                <p className="small">{e.summary}</p>
+                <div className="row">
+                  <Link className="btn sm" to="/experiences">Read the round</Link>
+                  <Link className="btn sm ghost" to={practiceLink(e)}>Practise this round</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="row">
+          <Link className="btn" to="/experiences">Browse all experiences</Link>
+          <Link className="btn ghost" to="/experiences">Share yours</Link>
+        </div>
+        <StepNav next="/daily/plan" />
+      </div>
+    </>
+  )
+}
+
+// Page 2: the learning plan (roadmap, directory and AI tools live inside it)
+export function DailyPlan() {
+  return (
+    <>
+      <Roadmap />
+      <div style={{ marginTop: 18 }}><StepNav next="/daily/topics" /></div>
+    </>
+  )
+}
+
+// Page 3: today's five AI interview topics
+export function DailyTopics() {
+  const { data, setData, loading, error, reload } = useLoad(() => get<Daily>('/daily'))
   const complete = useAction(async (id: string) => { const r = await post<Daily>(`/daily/topics/${id}/complete`); setData(r) })
-  const recent = list.data?.interviews.slice(0, 3) ?? []
   if (loading && !data) return <Spinner />
   if (!data) return <ErrorBox error={error} onRetry={reload} />
   return (
     <>
-      <PageHead title="Daily practice" sub="Your connected loop: learn from interview experiences, build your learning plan from your own interviews, practise it with a peer - and keep the streak going with today's topics." />
+      <PageHead title="Daily practice" sub="Today's five AI interview topics, across the interview categories. Practise any of them with the interviewer - finish all five to keep your streak going." />
       <div className="stack lg">
-        {act.data?.active && (
-          <div className="banner info"><span><b>Interview in progress:</b> {CATEGORY_LABELS[act.data.active.category]}, {act.data.active.difficulty}.</span><Link className="btn sm" to="/interview/live">Resume</Link></div>
-        )}
+        <ActiveBanner />
         <section className="card row" style={{ justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap' }}>
           <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.streakDays}</div><div className="small muted">day streak</div></div>
           <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.xp}</div><div className="small muted">total XP</div></div>
           <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.xpToday}</div><div className="small muted">XP today</div></div>
           <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.doneCount}/{data.topics.length}</div><div className="small muted">today's topics</div></div>
         </section>
-
-        <section className="stack">
-          <h2>1 · Learn from interview experiences</h2>
-          <p className="muted">Read how a round went: what was asked, how the candidate answered, how a senior PM ranked the answers, and the outcome. Then practise the same round and industry yourself.</p>
-          {exps.loading ? <Spinner /> : exps.error ? <ErrorBox error={exps.error} onRetry={exps.reload} /> : (
-            <div className="grid2">
-              {(exps.data?.experiences ?? []).slice(0, 2).map((e) => (
-                <div key={e.id} className="card stack">
-                  <div className="row between"><h3>{e.company}</h3><span className={'pill ' + (e.outcome === 'Offer' ? 'ok' : 'line')}>{e.outcome}</span></div>
-                  <p className="small muted">{e.role} · {e.industry} · {e.round}</p>
-                  <p className="small">{e.summary}</p>
-                  <div className="row">
-                    <Link className="btn sm" to="/experiences">Read the round</Link>
-                    <Link className="btn sm ghost" to={practiceLink(e)}>Practise this round</Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="row">
-            <Link className="btn" to="/experiences">Browse all experiences</Link>
-            <Link className="btn ghost" to="/experiences">Share yours</Link>
-          </div>
-        </section>
-
-        <section className="stack">
-          <h2>2 · Build your learning plan</h2>
-          <p className="muted">Your AI interview feedback and the experiences you share turn into a dated roadmap on its own page. The planner picks resources for your weak spots - videos, articles, templates and drills - and the PM AI tools that fit your plan topics, so the learning connects back to what the feedback flagged.</p>
-          <div className="card stack">
-            <div className="row between"><h3>Your recent interviews and feedback</h3><Link to="/history">See all</Link></div>
-            {list.loading ? <Spinner /> : list.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : recent.length === 0 ? (
-              <Empty title="No interviews yet">Your first scored report will show up here.<Link className="btn" to="/interview/setup">Start your first interview</Link></Empty>
-            ) : recent.map((i) => (
-              <Link key={i.id} to={`/history/${i.id}`} className="row between" style={{ textDecoration: 'none', color: 'inherit', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-                <span><b>{CATEGORY_LABELS[i.category]}</b> <span className="muted small">· {i.difficulty} · {fmtDate(i.created_at)}</span></span>
-                <span className="pill">{i.feedback_status === 'ready' ? 'Report ready' : i.status === 'in_progress' ? 'In progress' : 'No score'}</span>
-              </Link>
-            ))}
-            <p className="small muted">Each report ends with the gaps to work on next - those feed your learning plan here.</p>
-          </div>
-          <div className="row">
-            <Link className="btn" to="/roadmap">Build your learning plan</Link>
-            <Link className="btn ghost" to="/peer-mocks">Peer to peer</Link>
-          </div>
-        </section>
-
-        <section className="stack">
-          <h2>3 · Practise with a peer</h2>
-          <p className="muted">Once the learning lands, mark when you are free. Peers free at the same time show up, you book a live mock, take turns as interviewer and candidate, and swap feedback - the same loop, this time with a peer.</p>
-          {peers.loading ? <Spinner /> : peers.error ? <ErrorBox error={peers.error} onRetry={peers.reload} /> : peers.data && (
-            <div className="card stack">
-              {(() => {
-                const matches = peers.data.peers.filter((p) => p.overlap.length)
-                const upcoming = peers.data.bookings.filter((b) => b.status !== 'cancelled')
-                if (upcoming.length) return <p className="small"><b>{upcoming.length} mock{upcoming.length > 1 ? 's' : ''} booked.</b> <Link to="/peer-mocks">See your bookings</Link></p>
-                if (!peers.data.mine.length) return <p className="small muted">No slots marked yet. Mark a few and peers free at the same time will appear here.</p>
-                if (!matches.length) return <p className="small muted">{peers.data.mine.length} slot{peers.data.mine.length > 1 ? 's' : ''} marked. No peer overlaps yet - add more times to find a match.</p>
-                return (
-                  <>
-                    <p className="small"><b>{matches.length} peer{matches.length > 1 ? 's' : ''} free when you are.</b></p>
-                    {matches.slice(0, 2).map((p) => <div key={p.id} className="row between small"><span><b>{p.name}</b> <span className="muted">· {p.level} · {p.focus.join(', ')}</span></span><span className="pill lime">{p.overlap.length} shared slot{p.overlap.length > 1 ? 's' : ''}</span></div>)}
-                  </>
-                )
-              })()}
-            </div>
-          )}
-          <div className="row">
-            <Link className="btn" to="/peer-mocks">Mark your availability</Link>
-          </div>
-        </section>
-
-        <section className="stack">
-          <h2>4 · Today's five topics</h2>
-          <p className="muted">Five topics a day across the interview categories. Finish all five to keep your streak going and unlock today's bonus topic.</p>
-          <ErrorBox error={complete.error} />
-          <div className="grid2">
-            {data.topics.map((t) => (
-              <div key={t.id} className="card stack">
-                <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
-                <div className="row">
-                  <Link className="btn sm lime" to={`/interview/setup?category=${t.category}`}>Practise this topic</Link>
-                  {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
-                </div>
+        <ErrorBox error={complete.error} />
+        <div className="grid2">
+          {data.topics.map((t) => (
+            <div key={t.id} className="card stack">
+              <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
+              <div className="row">
+                <Link className="btn sm lime" to={`/interview/setup?category=${t.category}`}>Practise this topic</Link>
+                {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card stack">
-          <div className="row between"><h2>{data.bonus.title}</h2>{data.bonus.unlocked ? <span className="pill lime">Unlocked</span> : <span className="pill line">Locked</span>}</div>
-          <p className="small muted">{data.bonus.unlocked ? data.bonus.text : "Finish today's five topics to unlock the bonus topic."}</p>
-          {data.bonus.unlocked && <Link className="btn" style={{ justifySelf: 'start' }} to="/ai-tools">Open the bonus topic</Link>}
-        </section>
+            </div>
+          ))}
+        </div>
         <p className="small muted">Streaks, XP and topic progress are saved in this browser only.</p>
+        <StepNav next="/daily/peer" />
+      </div>
+    </>
+  )
+}
+
+// Page 4: practise with a peer, right after the AI interview practice
+export function DailyPeer() {
+  const peers = useLoad(() => get<Peers>('/peers'))
+  return (
+    <>
+      <PageHead title="Daily practice" sub="Practise with a peer: mark when you are free, book a live mock with someone free at the same time, take turns as interviewer and candidate, and swap feedback - the same loop as the AI interview, this time with a peer." />
+      <div className="stack lg">
+        {peers.loading ? <Spinner /> : peers.error ? <ErrorBox error={peers.error} onRetry={peers.reload} /> : peers.data && (
+          <div className="card stack">
+            {(() => {
+              const matches = peers.data.peers.filter((p) => p.overlap.length)
+              const upcoming = peers.data.bookings.filter((b) => b.status !== 'cancelled')
+              if (upcoming.length) return <p className="small"><b>{upcoming.length} mock{upcoming.length > 1 ? 's' : ''} booked.</b> <Link to="/peer-mocks">See your bookings</Link></p>
+              if (!peers.data.mine.length) return <p className="small muted">No slots marked yet. Mark a few and peers free at the same time will appear here.</p>
+              if (!matches.length) return <p className="small muted">{peers.data.mine.length} slot{peers.data.mine.length > 1 ? 's' : ''} marked. No peer overlaps yet - add more times to find a match.</p>
+              return (
+                <>
+                  <p className="small"><b>{matches.length} peer{matches.length > 1 ? 's' : ''} free when you are.</b></p>
+                  {matches.slice(0, 2).map((p) => <div key={p.id} className="row between small"><span><b>{p.name}</b> <span className="muted">· {p.level} · {p.focus.join(', ')}</span></span><span className="pill lime">{p.overlap.length} shared slot{p.overlap.length > 1 ? 's' : ''}</span></div>)}
+                </>
+              )
+            })()}
+          </div>
+        )}
+        <div className="row">
+          <Link className="btn" to="/peer-mocks">Mark your availability</Link>
+        </div>
+        <StepNav />
       </div>
     </>
   )

@@ -9,7 +9,7 @@ import Report from './pages/Report'
 import History from './pages/History'
 import Settings from './pages/Settings'
 import Experiences from './options/Experiences'
-import Daily from './options/Daily'
+import { DailyExperiences, DailyPeer, DailyPlan, DailyTopics } from './options/Daily'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import PeerMocks from './options/PeerMocks'
@@ -79,7 +79,10 @@ export default function App() {
           <Route element={<Private />}>
             <Route path="/home" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/daily" element={<Daily />} />
+            <Route path="/daily" element={<DailyExperiences />} />
+            <Route path="/daily/plan" element={<DailyPlan />} />
+            <Route path="/daily/topics" element={<DailyTopics />} />
+            <Route path="/daily/peer" element={<DailyPeer />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />
