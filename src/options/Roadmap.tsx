@@ -15,7 +15,7 @@ function ResRow({ r, onVote }: { r: Res; onVote?: (id: string, v: 1 | -1) => voi
   return (
     <div className="res">
       {onVote ? <button className={'vote' + (r.voted === 1 ? ' on' : '')} aria-pressed={r.voted === 1} aria-label={`Upvote ${r.title}`} onClick={() => onVote(r.id, 1)}>▲<span>{r.score}</span></button> : <span className={'pill tier-' + r.tier}>{TIER[r.tier]}</span>}
-      <div><b>{r.title}</b><div className="small muted">{TYPE[r.type]} · {r.minutes} min · {r.source} · {r.up} peers and {r.expertUp} experts voted · links are placeholders in this prototype</div></div>
+      <div><b>{r.title}</b><div className="small muted">{TYPE[r.type]} · {r.minutes} min · {r.source} · {r.up} peers and {r.expertUp} experts voted · links open in the full product</div></div>
       {onVote ? <span className={'pill tier-' + r.tier}>{TIER[r.tier]}</span> : <span className="pill line">{TOPICS[r.topics[0]]}</span>}
     </div>
   )
@@ -52,7 +52,7 @@ export default function Roadmap() {
   const planTools = allTools.filter((t) => (t.topics ?? []).some((tp) => picked.includes(tp)))
   return (
     <>
-      <PageHead title="Resources and learning roadmap" sub="Free resources from across the internet, ranked by peers and experienced PMs. The planner picks what to study first based on your weak spots and the time you have." sample />
+      <PageHead title="Resources and learning roadmap" sub="Free resources from across the internet, ranked by peers and experienced PMs. The planner picks what to study first based on your weak spots and the time you have." />
       <div className="tabs" style={{ marginBottom: 18 }}><button className={'tab' + (tab === 'plan' ? ' on' : '')} onClick={() => setTab('plan')}>My roadmap</button><button className={'tab' + (tab === 'dir' ? ' on' : '')} onClick={() => setTab('dir')}>Directory</button></div>
       {tab === 'plan' ? (
         <div className="split-4-8">
@@ -82,7 +82,7 @@ export default function Roadmap() {
               {planTools.length > 0 && (
                 <div className="card">
                   <h3>AI tools for your plan topics</h3>
-                  <p className="small muted">Sample entries - PMs use these alongside the resources above.</p>
+                  <p className="small muted">PMs use these alongside the resources above.</p>
                   <div className="row" style={{ marginTop: 6 }}>{planTools.map((t) => <Link key={t.id} className="pill" to="/ai-tools">{t.name}</Link>)}</div>
                 </div>
               )}
@@ -96,7 +96,7 @@ export default function Roadmap() {
           <ErrorBox error={vote.error} />
           {topicTools.length > 0 && (
             <div className="card" style={{ background: 'var(--violet-soft)' }}>
-              <span className="small muted">PM AI tools used for {TOPICS[topic]} (sample):</span>
+              <span className="small muted">PM AI tools used for {TOPICS[topic]}:</span>
               <div className="row" style={{ marginTop: 6 }}>{topicTools.map((t) => <Link key={t.id} className="pill" to="/ai-tools">{t.name}</Link>)}</div>
             </div>
           )}

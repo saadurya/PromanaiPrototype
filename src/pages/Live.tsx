@@ -154,6 +154,14 @@ export default function Live() {
     const pool = SAMPLE_ANSWERS[session!.category]; const n = msgs.filter((m) => m.role === 'candidate').length
     edit(pool[n % pool.length]); touch()
   }
+  // If the mic cannot actually start here (blocked permission, no device), the main control still yields an answer to work with.
+  const [micFilled, setMicFilled] = useState(false)
+  const lastIsAnswerNow = msgs.at(-1)?.role === 'candidate'
+  useEffect(() => {
+    if (rec.error && session && !lastIsAnswerNow && !text.trim() && phase === 'idle') { sample(); setMicFilled(true) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rec.error])
+  useEffect(() => { setMicFilled(false) }, [msgs.length])
 
   if (boot === 'loading') return <div style={{ padding: 40 }}>{error ? <ErrorBox error={error} /> : <Spinner />}</div>
   if (boot === 'prompt' && session) return (
@@ -180,7 +188,7 @@ export default function Live() {
           </div>
         </aside>
         <section className="stack">
-          <div className="row"><span className="pill lime">{CATEGORY_LABELS[session.category]}</span><span className="pill">{session.level}</span><span className="pill">{session.difficulty}</span>{session.industry && <span className="pill line">{industryName(session.industry)}</span>}<span className="sample-chip">Sample interview</span></div>
+          <div className="row"><span className="pill lime">{CATEGORY_LABELS[session.category]}</span><span className="pill">{session.level}</span><span className="pill">{session.difficulty}</span>{session.industry && <span className="pill line">{industryName(session.industry)}</span>}</div>
           <div className="card stack">
             <div className="convo" ref={convoRef} aria-live="polite">
               {msgs.map((m) => <div key={m.seq} className={`msg ${m.role}${m.skipped ? ' skipped' : ''}`}><small>{m.role === 'interviewer' ? 'Interviewer' : 'You'}</small>{m.content}</div>)}
@@ -193,16 +201,16 @@ export default function Live() {
           <div className="card stack">
             <div className="row between"><label className="field" htmlFor="ans">Your answer <span className="muted small" style={{ fontWeight: 400 }}>Speak, then edit anything the mic got wrong</span></label><span className="small muted" aria-live="polite">{{ '': '', saving: 'Saving…', saved: 'Draft saved', local: 'Saved on this device. Will sync when you reconnect.' }[saved]}</span></div>
             <textarea id="ans" value={text} onChange={(e) => { edit(e.target.value); touch() }} placeholder={rec.listening ? 'Listening…' : 'Press Start speaking and answer out loud.'} disabled={busy || lastIsAnswer} rows={5} />
-            {rec.error && <div className="err" role="alert">{rec.error}</div>}
+            {rec.error && !micFilled && <div className="err" role="alert">{rec.error}</div>}
             <div className="row between">
               <div className="row">
-                <button className={'mic-btn' + (rec.listening ? ' rec' : '')} onClick={() => (rec.listening ? rec.stop() : rec.start())} disabled={busy || lastIsAnswer || !rec.supported} aria-label={rec.listening ? 'Stop speaking' : 'Start speaking'}>{rec.listening ? '■' : '●'}</button>
+                <button className={'mic-btn' + (rec.listening ? ' rec' : '')} onClick={() => (rec.supported ? (rec.listening ? rec.stop() : rec.start()) : sample())} disabled={busy || lastIsAnswer} aria-label={rec.listening ? 'Stop speaking' : 'Start speaking'}>{rec.listening ? '■' : '●'}</button>
                 <span className="small">{rec.listening ? 'Stop speaking' : 'Start speaking'}</span>
-                <button className="btn ghost sm" onClick={sample} disabled={busy || lastIsAnswer}>Fill sample answer (prototype)</button>
               </div>
               <button className="btn lg" onClick={submit} disabled={busy || !text.trim() || lastIsAnswer}>{phase === 'analyzing' ? 'Submitting…' : 'Submit answer'}</button>
             </div>
-            {!rec.supported && <p className="small muted">Speech recognition needs desktop Chrome or Edge. In this prototype you can use the sample answer button instead.</p>}
+            {!rec.supported && <p className="small muted">This browser has no speech recognition (desktop Chrome or Edge do), so the mic button types a practice answer for you instead.</p>}
+            {micFilled && rec.error && <p className="small muted">The mic is unavailable here, so a practice answer was typed for you. Edit it or submit it as-is.</p>}
           </div>
         </section>
       </div>

@@ -3,16 +3,11 @@ import { NavLink, Navigate, Outlet, Route, Routes, useLocation } from 'react-rou
 import { AuthProvider, useAuth } from './auth'
 import { Spinner, ToastProvider } from './ui'
 import Landing from './pages/Landing'
-import Home from './pages/Home'
-import Auth from './pages/Auth'
-import Dashboard from './pages/Dashboard'
 import Setup from './pages/Setup'
 import Live from './pages/Live'
 import Report from './pages/Report'
 import History from './pages/History'
 import Settings from './pages/Settings'
-import VerifyEmail from './pages/VerifyEmail'
-import { VoiceTest, AiTest } from './pages/Sandbox'
 import Experiences from './options/Experiences'
 import Daily from './options/Daily'
 import PeerMocks from './options/PeerMocks'
@@ -38,8 +33,8 @@ function Shell() {
         </button>
         <NavLink to="/home" className="brand"><i />ProManAI</NavLink>
         <nav className="topnav" aria-label="Sections">
-          <NavLink to="/experiences">Interview experiences</NavLink>
-          <NavLink to="/roadmap">Roadmap &amp; resources</NavLink>
+          <NavLink to="/home">Daily practice</NavLink>
+          <NavLink to="/interview/setup">New interview</NavLink>
         </nav>
       </header>
       {menuOpen && <button className="backdrop" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
@@ -49,25 +44,13 @@ function Shell() {
           <button className="side-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>✕</button>
         </div>
         <nav className="nav" aria-label="Main">
-          <div className="nav-group">Practice</div>
-          <NavLink to="/home">Home</NavLink>
+          <NavLink to="/home">Daily practice</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
           <NavLink to="/history">History</NavLink>
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/daily">Daily practice</NavLink>
-          <div className="nav-group">Experiences</div>
-          <NavLink to="/experiences">Interview experiences</NavLink>
-          <NavLink to="/peer-mocks">Peer mock interviews</NavLink>
-          <div className="nav-group">Learn</div>
-          <NavLink to="/roadmap">Roadmap &amp; resources</NavLink>
-          <NavLink to="/ai-tools">PM AI tools</NavLink>
-          <div className="nav-group">Account</div>
           <NavLink to="/settings">Settings</NavLink>
-          <div className="nav-group">Prototype checks</div>
-          <NavLink to="/voice-test">Voice test</NavLink>
-          <NavLink to="/ai-test">AI test</NavLink>
         </nav>
-        <div className="side-foot"><b>{user?.name}</b>{user?.email}<br /><a href="/" onClick={(e) => { e.preventDefault(); signOut() }} style={{ color: '#d6f03b' }}>Sign out</a></div>
+        <div className="side-foot"><b>{user?.name}</b>{user?.email}<br /><a href="/" onClick={(e) => { e.preventDefault(); signOut() }} style={{ color: '#d6f03b' }}>Sign out</a>
+          <span style={{ display: 'block', marginTop: 10, fontSize: '0.75rem' }}>Demo build: the interviewer, scoring and peer sessions are simulated on this device.</span></div>
       </aside>
       <main className="main"><Outlet /></main>
     </div>
@@ -82,31 +65,21 @@ function Private({ verified }: { verified?: boolean }) {
   if (verified && !user.verified) return <Navigate to="/home" replace state={{ needVerify: true }} />
   return <Shell />
 }
-function Guest() {
-  const { user, ready } = useAuth()
-  if (!ready) return null
-  return user ? <Navigate to="/home" replace /> : <Outlet />
-}
-
 export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route element={<Guest />}>
-            <Route path="/login" element={<Auth mode="login" />} />
-            <Route path="/signup" element={<Auth mode="signup" />} />
-          </Route>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/signup" element={<Navigate to="/" replace />} />
           <Route element={<Private />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/daily" element={<Daily />} />
+            <Route path="/home" element={<Daily />} />
+            <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+            <Route path="/daily" element={<Navigate to="/home" replace />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/voice-test" element={<VoiceTest />} />
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/peer-mocks" element={<PeerMocks />} />
             <Route path="/roadmap" element={<Roadmap />} />
@@ -122,7 +95,6 @@ export default function App() {
           <Route element={<Private verified />}>
             <Route path="/interview/setup" element={<Setup />} />
             <Route path="/interview/live" element={<Live />} />
-            <Route path="/ai-test" element={<AiTest />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -2,8 +2,8 @@
 // Every account on this browser is still kept separate by the same token and owner checks as the Node server.
 import { createCore } from '../server/app.js'
 
-const KEY = 'promanai-mock-v2'
-try { localStorage.removeItem('promanai-mock-v1') } catch { /* data from the old single-user build */ }
+const KEY = 'promanai-mock-v3'
+try { localStorage.removeItem('promanai-mock-v1'); localStorage.removeItem('promanai-mock-v2') } catch { /* data from the old single-user build */ }
 
 export const dispatch = createCore({
   devTools: true, // a static site cannot send email, so verification links are shown in the app instead

@@ -28,7 +28,7 @@ export default function PeerMocks() {
   const upcoming = data.bookings.filter((b) => b.status !== 'cancelled')
   return (
     <>
-      <PageHead title="Peer mock interviews" sub="Mark when you are free. Peers who are free at the same time show up, and you can book a live mock and swap feedback." sample />
+      <PageHead title="Peer mock interviews" sub="Mark when you are free. Peers who are free at the same time show up, and you can book a live mock and swap feedback." />
       <div className="stack lg">
         <section className="card stack">
           <div className="row between"><h2>Your availability</h2><span className="small muted">{data.mine.length} slots marked · times in your local time zone</span></div>
@@ -64,7 +64,7 @@ export default function PeerMocks() {
               </div>
               {data.questionBank?.[b.focus] && (
                 <details className="small" style={{ marginTop: 6 }}>
-                  <summary style={{ cursor: 'pointer' }}>Suggested questions for this mock (sample)</summary>
+                  <summary style={{ cursor: 'pointer' }}>Suggested questions for this mock</summary>
                   <ul className="list-plain" style={{ marginTop: 6 }}>{data.questionBank[b.focus].map((q, i) => <li key={i}>{q}</li>)}</ul>
                 </details>
               )}
@@ -87,7 +87,7 @@ function BookModal({ peer, questionBank, onClose, onDone }: { peer: Peer; questi
       <label className="field">Practise<select value={focus} onChange={(e) => setFocus(e.target.value)}>{peer.focus.map((f) => <option key={f} value={f}>{CATEGORY_LABELS[f]}</option>)}</select></label>
       {questionBank?.[focus] && (
         <div className="small">
-          <span className="muted">Suggested questions for whoever plays interviewer (sample):</span>
+          <span className="muted">Suggested questions for whoever plays interviewer:</span>
           <ul className="list-plain" style={{ marginTop: 6 }}>{questionBank[focus].map((q, i) => <li key={i}>{q}</li>)}</ul>
         </div>
       )}

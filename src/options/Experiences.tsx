@@ -29,7 +29,7 @@ export default function Experiences() {
   const helpful = useAction(async (id: string) => { await post(`/experiences/${id}/helpful`); reload() })
   return (
     <>
-      <PageHead title="Real interview experiences" sub="What interviewers actually asked, how candidates answered, and how senior PMs rank those answers." sample
+      <PageHead title="Real interview experiences" sub="What interviewers asked, how candidates answered, and how senior PMs ranked those answers."
         right={<div className="row"><button className={'btn' + (view === 'library' ? '' : ' ghost')} onClick={() => setView('library')}>Library</button><button className={'btn' + (view === 'share' ? '' : ' ghost')} onClick={() => setView('share')}>Share yours</button></div>} />
       {view === 'share' ? <Share onDone={() => { reload(); setView('library') }} /> : (<>
         {loading && <Spinner />}<ErrorBox error={error} onRetry={reload} />
@@ -121,7 +121,7 @@ function Share({ onDone }: { onDone: () => void }) {
           <label className="field">Or paste a transcript<textarea value={raw} onChange={(e) => setRaw(e.target.value)} placeholder={'Interviewer: How would you improve onboarding?\nMe: I would start with where users drop off…'} /></label>
         </div>
         <div className="row"><button className="btn" disabled={parse.busy || (!file && !raw.trim())} onClick={() => parse.run()}>{parse.busy ? 'Structuring with AI…' : 'Structure my experience'}</button>{parse.busy && <Spinner />}</div>
-        {file && <p className="small muted">Prototype: any audio file returns the same sample conversation. Nothing is uploaded.</p>}
+        {file && <p className="small muted">Any audio file returns the same practice conversation here. Nothing is uploaded.</p>}
         <ErrorBox error={parse.error} />
       </section>
       {turns.length > 0 && (

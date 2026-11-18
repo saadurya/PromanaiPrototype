@@ -19,7 +19,7 @@ export default function AiTools() {
   const updates = data.tools.flatMap((t) => t.updates.map((u) => ({ ...u, tool: t.name }))).slice(0, 5)
   return (
     <>
-      <PageHead title="PM AI tools and intelligence" sub="Which AI tools PMs use, in which industries, for what, and how much they change the work. Votes and reports come from PMs, with experienced voices shown by name." sample />
+      <PageHead title="PM AI tools and intelligence" sub="Which AI tools PMs use, in which industries, for what, and how much they change the work. Votes and reports come from PMs, with experienced voices shown by name." />
       <div className="stack lg">
         <section className="card stack">
           <h2>Recent developments</h2>

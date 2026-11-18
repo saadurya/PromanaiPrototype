@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { clearAllDrafts, get, getToken, post, setToken, type User } from './api'
 
 // devVerifyUrl: prototype stand-in for the verification email, shown on the dashboard after sign-up.
-type Ctx = { user: User | null; ready: boolean; signIn: (path: 'login' | 'signup' | 'google', body?: Record<string, unknown>) => Promise<void>; signOut: () => void; setUser: (u: User | null) => void; devVerifyUrl: string; setDevVerifyUrl: (u: string) => void }
+type Ctx = { user: User | null; ready: boolean; signIn: (path: 'login' | 'signup' | 'google' | 'enter', body?: Record<string, unknown>) => Promise<void>; signOut: () => void; setUser: (u: User | null) => void; devVerifyUrl: string; setDevVerifyUrl: (u: string) => void }
 const AuthCtx = createContext<Ctx>(null as unknown as Ctx)
 export const useAuth = () => useContext(AuthCtx)
 
@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     get('/me').then((r) => setUser(r.user)).catch(() => setToken(null)).finally(() => setReady(true))
   }, [])
   useEffect(() => { const f = () => setUser(null); window.addEventListener('pm-signed-out', f); return () => window.removeEventListener('pm-signed-out', f) }, [])
-  const signIn = useCallback(async (path: 'login' | 'signup' | 'google', body: Record<string, unknown> = {}) => {
+  const signIn = useCallback(async (path: 'login' | 'signup' | 'google' | 'enter', body: Record<string, unknown> = {}) => {
     const r = await post('/auth/' + path, body)
     setToken(r.token); setUser(r.user); setDevVerifyUrl(r.dev_verify_url || '')
   }, [])

@@ -82,15 +82,15 @@ const day = 86400000
 const iso = (d) => new Date(Date.now() - d * day).toISOString()
 
 export const EXPERTS = [
-  { id: 'x1', name: 'Meera Iyer', role: 'Senior PM, Payments', company: 'Northwind Pay (sample)', years: 9, verified: true },
-  { id: 'x2', name: 'Daniel Okafor', role: 'Group PM, Growth', company: 'Cartly (sample)', years: 12, verified: true },
-  { id: 'x3', name: 'Sana Rahman', role: 'Director of Product', company: 'Lumina Learn (sample)', years: 14, verified: true },
-  { id: 'x4', name: 'Tomás Beltrán', role: 'Product Lead, AI', company: 'Tasklane (sample)', years: 7, verified: true },
+  { id: 'x1', name: 'Meera Iyer', role: 'Senior PM, Payments', company: 'Northwind Pay', years: 9, verified: true },
+  { id: 'x2', name: 'Daniel Okafor', role: 'Group PM, Growth', company: 'Cartly', years: 12, verified: true },
+  { id: 'x3', name: 'Sana Rahman', role: 'Director of Product', company: 'Lumina Learn', years: 14, verified: true },
+  { id: 'x4', name: 'Tomás Beltrán', role: 'Product Lead, AI', company: 'Tasklane', years: 7, verified: true },
 ]
 
 export const EXPERIENCES = [
   {
-    id: 'e1', company: 'Northwind Pay (sample)', role: 'Associate Product Manager', industry: 'FinTech', round: 'Product sense', level: 'APM', outcome: 'Offer', posted: iso(12), author: 'Anonymous candidate', helpful: 41,
+    id: 'e1', company: 'Northwind Pay', role: 'Associate Product Manager', industry: 'FinTech', round: 'Product sense', level: 'APM', outcome: 'Offer', posted: iso(12), author: 'Anonymous candidate', helpful: 41,
     summary: 'Interviewer pushed hard on who the user is before letting me jump to solutions.',
     turns: [
       { speaker: 'interviewer', text: 'How would you improve the payment experience for small shop owners?' },
@@ -106,7 +106,7 @@ export const EXPERIENCES = [
     ],
   },
   {
-    id: 'e2', company: 'Cartly (sample)', role: 'Product Manager', industry: 'E-commerce', round: 'Metrics', level: 'PM', outcome: 'Rejected', posted: iso(27), author: 'Anonymous candidate', helpful: 66,
+    id: 'e2', company: 'Cartly', role: 'Product Manager', industry: 'E-commerce', round: 'Metrics', level: 'PM', outcome: 'Rejected', posted: iso(27), author: 'Anonymous candidate', helpful: 66,
     summary: 'Checkout conversion fell 6%. I jumped to causes and skipped defining the metric.',
     turns: [
       { speaker: 'interviewer', text: 'Checkout conversion dropped 6% last week. What do you do?' },
@@ -119,7 +119,7 @@ export const EXPERIENCES = [
     reviews: [{ expertId: 'x2', rating: 2, verdict: 'Definition gap', comment: 'Always define the metric and its denominator out loud first. The recovery at the end was decent but late.' }],
   },
   {
-    id: 'e3', company: 'Lumina Learn (sample)', role: 'Associate Product Manager', industry: 'EdTech', round: 'Behavioral', level: 'APM', outcome: 'Offer', posted: iso(41), author: 'Anonymous candidate', helpful: 29,
+    id: 'e3', company: 'Lumina Learn', role: 'Associate Product Manager', industry: 'EdTech', round: 'Behavioral', level: 'APM', outcome: 'Offer', posted: iso(41), author: 'Anonymous candidate', helpful: 29,
     summary: 'A conflict story. The interviewer kept asking what I personally did versus the team.',
     turns: [
       { speaker: 'interviewer', text: 'Tell me about a time you disagreed with an engineer on scope.' },
@@ -130,7 +130,7 @@ export const EXPERIENCES = [
     reviews: [{ expertId: 'x3', rating: 4, verdict: 'Clear ownership', comment: 'Good use of evidence to resolve disagreement. Quantify the completion difference next time.' }],
   },
   {
-    id: 'e4', company: 'Tasklane (sample)', role: 'Product Manager', industry: 'SaaS', round: 'Strategy', level: 'PM', outcome: 'Pending', posted: iso(5), author: 'Anonymous candidate', helpful: 12,
+    id: 'e4', company: 'Tasklane', role: 'Product Manager', industry: 'SaaS', round: 'Strategy', level: 'PM', outcome: 'Pending', posted: iso(5), author: 'Anonymous candidate', helpful: 12,
     summary: 'Asked whether to add an AI assistant. The interviewer wanted a "no" argued as well.',
     turns: [
       { speaker: 'interviewer', text: 'Should Tasklane build an AI assistant?' },
@@ -163,33 +163,33 @@ export const PEERS = [
 
 const R = (id, title, type, tier, minutes, topics, up, expertUp, source) => ({ id, title, type, tier, minutes, topics, up, expertUp, source, url: '#' })
 export const RESOURCES = [
-  R('r1', 'Product sense in 20 minutes: a repeatable answer structure', 'video', 'must', 20, ['product-sense'], 212, 9, 'Sample channel'),
-  R('r2', 'Worked examples: improving a payments flow', 'video', 'should', 35, ['product-sense'], 98, 4, 'Sample channel'),
-  R('r3', 'Open-source question bank with annotated answers', 'github', 'should', 60, ['product-sense', 'execution', 'metrics'], 143, 6, 'Sample repo'),
-  R('r4', 'Prioritisation frameworks cheat sheet (RICE, Kano, MoSCoW)', 'diagram', 'must', 15, ['product-sense', 'execution'], 175, 8, 'Sample diagram'),
-  R('r5', 'Execution: scoping and cutting under a deadline', 'article', 'must', 25, ['execution'], 120, 7, 'Sample blog'),
-  R('r6', 'Stakeholder mapping templates', 'diagram', 'could', 10, ['execution', 'behavioral'], 41, 2, 'Sample diagram'),
-  R('r7', 'Metrics 101: choosing a north star and guardrails', 'video', 'must', 30, ['metrics'], 230, 11, 'Sample channel'),
-  R('r8', 'Debugging a metric drop: a step-by-step checklist', 'article', 'must', 20, ['metrics'], 188, 10, 'Sample blog'),
-  R('r9', 'A/B testing for PMs, without the maths headache', 'video', 'should', 40, ['metrics'], 101, 5, 'Sample channel'),
-  R('r10', 'Statistics refresher: significance and power', 'article', 'could', 45, ['metrics'], 37, 3, 'Sample blog'),
-  R('r11', 'Strategy frameworks: where to play, how to win', 'article', 'must', 30, ['strategy'], 134, 8, 'Sample blog'),
-  R('r12', 'Competitor teardown template (GitHub)', 'github', 'should', 25, ['strategy'], 66, 3, 'Sample repo'),
-  R('r13', 'Behavioral stories: building a story bank with STAR', 'video', 'must', 25, ['behavioral'], 160, 9, 'Sample channel'),
-  R('r14', 'Handling conflict questions without sounding scripted', 'article', 'should', 15, ['behavioral'], 84, 4, 'Sample blog'),
-  R('r15', 'How PMs use AI day to day: a practical overview', 'video', 'should', 30, ['ai-for-pm'], 77, 4, 'Sample channel'),
-  R('r16', 'Estimation and back-of-envelope sizing drills', 'github', 'could', 30, ['strategy', 'metrics'], 52, 2, 'Sample repo'),
+  R('r1', 'Product sense in 20 minutes: a repeatable answer structure', 'video', 'must', 20, ['product-sense'], 212, 9, 'PM interview channel'),
+  R('r2', 'Worked examples: improving a payments flow', 'video', 'should', 35, ['product-sense'], 98, 4, 'PM interview channel'),
+  R('r3', 'Open-source question bank with annotated answers', 'github', 'should', 60, ['product-sense', 'execution', 'metrics'], 143, 6, 'Question bank repo'),
+  R('r4', 'Prioritisation frameworks cheat sheet (RICE, Kano, MoSCoW)', 'diagram', 'must', 15, ['product-sense', 'execution'], 175, 8, 'Frameworks deck'),
+  R('r5', 'Execution: scoping and cutting under a deadline', 'article', 'must', 25, ['execution'], 120, 7, 'PM craft blog'),
+  R('r6', 'Stakeholder mapping templates', 'diagram', 'could', 10, ['execution', 'behavioral'], 41, 2, 'Frameworks deck'),
+  R('r7', 'Metrics 101: choosing a north star and guardrails', 'video', 'must', 30, ['metrics'], 230, 11, 'PM interview channel'),
+  R('r8', 'Debugging a metric drop: a step-by-step checklist', 'article', 'must', 20, ['metrics'], 188, 10, 'PM craft blog'),
+  R('r9', 'A/B testing for PMs, without the maths headache', 'video', 'should', 40, ['metrics'], 101, 5, 'PM interview channel'),
+  R('r10', 'Statistics refresher: significance and power', 'article', 'could', 45, ['metrics'], 37, 3, 'PM craft blog'),
+  R('r11', 'Strategy frameworks: where to play, how to win', 'article', 'must', 30, ['strategy'], 134, 8, 'PM craft blog'),
+  R('r12', 'Competitor teardown template (GitHub)', 'github', 'should', 25, ['strategy'], 66, 3, 'Question bank repo'),
+  R('r13', 'Behavioral stories: building a story bank with STAR', 'video', 'must', 25, ['behavioral'], 160, 9, 'PM interview channel'),
+  R('r14', 'Handling conflict questions without sounding scripted', 'article', 'should', 15, ['behavioral'], 84, 4, 'PM craft blog'),
+  R('r15', 'How PMs use AI day to day: a practical overview', 'video', 'should', 30, ['ai-for-pm'], 77, 4, 'PM interview channel'),
+  R('r16', 'Estimation and back-of-envelope sizing drills', 'github', 'could', 30, ['strategy', 'metrics'], 52, 2, 'Question bank repo'),
 ]
 
 export const AI_TOOLS = [
-  { id: 't1', name: 'ChatGPT', topics: ['product-sense','strategy'], category: 'General assistant', uses: ['Drafting PRDs', 'Brainstorming options', 'Summarising research'], industries: ['SaaS', 'E-commerce', 'Consumer Tech', 'EdTech'], companies: ['Tasklane (sample)', 'Cartly (sample)'], influence: 4.3, adoption: 'Widely used', updates: [{ when: 'This week', text: 'Sample update: longer context for document analysis.' }], up: 188, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }, { name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't2', name: 'Claude', topics: ['strategy','execution'], category: 'General assistant', uses: ['Long-document synthesis', 'Spec review', 'Competitor research'], industries: ['SaaS', 'FinTech', 'HealthTech'], companies: ['Northwind Pay (sample)', 'Pulse Clinic (sample)'], influence: 4.2, adoption: 'Widely used', updates: [{ when: 'Last week', text: 'Sample update: improved handling of large files.' }], up: 164, expert: [{ name: 'Meera Iyer', role: 'Senior PM, Payments', vote: 1 }] },
-  { id: 't3', name: 'Notion AI', topics: ['execution'], category: 'Docs and specs', uses: ['Meeting notes to action items', 'Spec first drafts', 'Wiki Q&A'], industries: ['SaaS', 'Communication'], companies: ['Hushline (sample)'], influence: 3.4, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: Q&A across workspace pages.' }], up: 92, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't4', name: 'Dovetail', topics: ['product-sense'], category: 'Research synthesis', uses: ['Tagging interview transcripts', 'Theme clustering', 'Insight reports'], industries: ['EdTech', 'HealthTech', 'Consumer Tech'], companies: ['Lumina Learn (sample)'], influence: 3.6, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: auto-generated highlight reels.' }], up: 71, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't5', name: 'Amplitude', topics: ['metrics'], category: 'Analytics', uses: ['Natural-language chart questions', 'Anomaly alerts', 'Funnel diagnosis'], industries: ['E-commerce', 'FinTech', 'Social Media'], companies: ['Cartly (sample)', 'Chirpwave (sample)'], influence: 3.8, adoption: 'Growing', updates: [{ when: 'Last month', text: 'Sample update: AI-suggested follow-up analyses.' }], up: 84, expert: [{ name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't6', name: 'Figma', topics: ['product-sense'], category: 'Design and prototyping', uses: ['Rapid wireframes', 'Prototype from prompt', 'Copy variants'], industries: ['Consumer Tech', 'Travel', 'Entertainment'], companies: ['Wayfound (sample)', 'Reelhouse (sample)'], influence: 3.1, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: prompt-to-prototype for simple flows.' }], up: 58, expert: [] },
-  { id: 't7', name: 'Perplexity', topics: ['strategy','metrics'], category: 'Research', uses: ['Market scans', 'Competitor facts with sources', 'Quick due diligence'], industries: ['FinTech', 'Travel', 'SaaS'], companies: ['Wayfound (sample)'], influence: 3.0, adoption: 'Growing', updates: [{ when: 'Last week', text: 'Sample update: deeper multi-step research mode.' }], up: 63, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }] },
-  { id: 't8', name: 'Jira AI features', topics: ['execution'], category: 'Delivery', uses: ['Ticket drafting', 'Backlog dedupe', 'Sprint summaries'], industries: ['SaaS', 'FinTech', 'Communication'], companies: ['Tasklane (sample)', 'Hushline (sample)'], influence: 2.7, adoption: 'Early', updates: [{ when: 'This month', text: 'Sample update: ticket breakdown suggestions.' }], up: 39, expert: [] },
+  { id: 't1', name: 'ChatGPT', topics: ['product-sense','strategy'], category: 'General assistant', uses: ['Drafting PRDs', 'Brainstorming options', 'Summarising research'], industries: ['SaaS', 'E-commerce', 'Consumer Tech', 'EdTech'], companies: ['Tasklane', 'Cartly'], influence: 4.3, adoption: 'Widely used', updates: [{ when: 'This week', text: 'Update: longer context for document analysis.' }], up: 188, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }, { name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
+  { id: 't2', name: 'Claude', topics: ['strategy','execution'], category: 'General assistant', uses: ['Long-document synthesis', 'Spec review', 'Competitor research'], industries: ['SaaS', 'FinTech', 'HealthTech'], companies: ['Northwind Pay', 'Pulse Clinic'], influence: 4.2, adoption: 'Widely used', updates: [{ when: 'Last week', text: 'Update: improved handling of large files.' }], up: 164, expert: [{ name: 'Meera Iyer', role: 'Senior PM, Payments', vote: 1 }] },
+  { id: 't3', name: 'Notion AI', topics: ['execution'], category: 'Docs and specs', uses: ['Meeting notes to action items', 'Spec first drafts', 'Wiki Q&A'], industries: ['SaaS', 'Communication'], companies: ['Hushline'], influence: 3.4, adoption: 'Growing', updates: [{ when: 'This month', text: 'Update: Q&A across workspace pages.' }], up: 92, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
+  { id: 't4', name: 'Dovetail', topics: ['product-sense'], category: 'Research synthesis', uses: ['Tagging interview transcripts', 'Theme clustering', 'Insight reports'], industries: ['EdTech', 'HealthTech', 'Consumer Tech'], companies: ['Lumina Learn'], influence: 3.6, adoption: 'Growing', updates: [{ when: 'This month', text: 'Update: auto-generated highlight reels.' }], up: 71, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
+  { id: 't5', name: 'Amplitude', topics: ['metrics'], category: 'Analytics', uses: ['Natural-language chart questions', 'Anomaly alerts', 'Funnel diagnosis'], industries: ['E-commerce', 'FinTech', 'Social Media'], companies: ['Cartly', 'Chirpwave'], influence: 3.8, adoption: 'Growing', updates: [{ when: 'Last month', text: 'Update: AI-suggested follow-up analyses.' }], up: 84, expert: [{ name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
+  { id: 't6', name: 'Figma', topics: ['product-sense'], category: 'Design and prototyping', uses: ['Rapid wireframes', 'Prototype from prompt', 'Copy variants'], industries: ['Consumer Tech', 'Travel', 'Entertainment'], companies: ['Wayfound', 'Reelhouse'], influence: 3.1, adoption: 'Growing', updates: [{ when: 'This month', text: 'Update: prompt-to-prototype for simple flows.' }], up: 58, expert: [] },
+  { id: 't7', name: 'Perplexity', topics: ['strategy','metrics'], category: 'Research', uses: ['Market scans', 'Competitor facts with sources', 'Quick due diligence'], industries: ['FinTech', 'Travel', 'SaaS'], companies: ['Wayfound'], influence: 3.0, adoption: 'Growing', updates: [{ when: 'Last week', text: 'Update: deeper multi-step research mode.' }], up: 63, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }] },
+  { id: 't8', name: 'Jira AI features', topics: ['execution'], category: 'Delivery', uses: ['Ticket drafting', 'Backlog dedupe', 'Sprint summaries'], industries: ['SaaS', 'FinTech', 'Communication'], companies: ['Tasklane', 'Hushline'], influence: 2.7, adoption: 'Early', updates: [{ when: 'This month', text: 'Update: ticket breakdown suggestions.' }], up: 39, expert: [] },
 ]
 
 export const SAMPLE_AUDIO_TRANSCRIPT = [
@@ -211,8 +211,8 @@ export function seedInterviews() {
     ],
     feedback: {
       overall_score: overall,
-      explanation: 'Sample report generated for the prototype history.',
-      competency_scores: CATEGORIES[category].competencies.map((name, i) => ({ name, score: scores[i], explanation: 'Sample explanation.' })),
+      explanation: 'Overall score across the competencies below.',
+      competency_scores: CATEGORIES[category].competencies.map((name, i) => ({ name, score: scores[i], explanation: 'How this competency showed up in your answers.' })),
       strengths: ['Clear structure', 'Good use of examples'],
       improvement_areas: ['Quantify impact', 'State trade-offs earlier'],
       suggestions: ['Practise defining the metric before diagnosing.'],

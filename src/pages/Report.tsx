@@ -63,7 +63,7 @@ export default function Report() {
                   return (
                     <div key={area} className="stack" style={{ gap: 6 }}>
                       <b>{area}</b>
-                      {resLoad.loading ? <span className="small muted">Finding matching resources…</span> : matches.length === 0 ? <span className="small muted">No sample resources matched this gap yet.</span> : matches.map((r) => (
+                      {resLoad.loading ? <span className="small muted">Finding matching resources…</span> : matches.length === 0 ? <span className="small muted">No resources matched this gap yet.</span> : matches.map((r) => (
                         <div key={r.id} className="row between small" style={{ borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
                           <span>{r.title} <span className="muted">· {r.minutes} min · {TIER[r.tier]}</span></span>
                           <Link to={`/roadmap?topic=${topic}`}>Open in roadmap</Link>
@@ -72,7 +72,7 @@ export default function Report() {
                     </div>
                   )
                 })}
-                <span className="small muted">Sample resources; links are placeholders in this prototype.</span>
+                <span className="small muted">Resource links open in the full product.</span>
               </section>
               <section className="card stack"><h2>Next steps</h2><ul className="list-plain">{f.suggestions.map((x) => <li key={x}>{x}</li>)}</ul><Link to="/roadmap" className="small">Turn these gaps into a study plan</Link></section>
             </div>

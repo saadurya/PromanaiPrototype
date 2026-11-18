@@ -57,7 +57,7 @@ export function makeGuard(secrets) {
     const overall = Math.round((comps.reduce((n, c) => n + c.score, 0) / comps.length) * 10) / 10
     const out = {
       overall_score: overall,
-      explanation: `Overall ${overall}/5 across ${comps.length} competencies, computed by the server as the average of competency scores.`,
+      explanation: `Overall ${overall}/5 across ${comps.length} competencies, the average of the competency scores.`,
       competency_scores: comps,
       strengths: list(raw.strengths),
       improvement_areas: list(raw.improvement_areas),

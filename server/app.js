@@ -431,6 +431,22 @@ export function createCore(opts = {}) {
     if (!u) { u = (await fresh()).users.get(DEMO.id); db.users.set(u.id, u) } // demo account was deleted: recreate it empty
     return { body: { token: signIn(u), user: publicUser(u) } }
   }, true)
+  // Local demo persona entry. Mock API only: a name and an email create a browser-local persona. No password and no
+  // real email verification - the verified flag only skips the mock's own email-confirmation screens. It never signs
+  // into a password account, so no existing account can be entered this way.
+  on('POST', '/api/auth/enter', async (b) => {
+    const email = String(b.email || '').trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err(400, 'invalid_input', 'Enter a valid email address.')
+    let u = findByEmail(email)
+    if (u && u.pw) return err(409, 'password_account', 'That email belongs to a password account. Use a different email for this demo.')
+    if (!u) {
+      u = { id: 'u' + rid(), email, name: String(b.name || email.split('@')[0]).trim().slice(0, 60) || email.split('@')[0], verified: true, pw: null, verify: null }
+      db.users.set(u.id, u)
+      // New personas get the same practice history as the demo so the full loop (feedback, gaps, plan) is visible on a first visit.
+      db.interviews.push(...S.seedInterviews().map((i) => ({ ...i, owner_id: u.id })))
+    }
+    return { body: { token: signIn(u), user: publicUser(u) } }
+  }, true)
   on('POST', '/api/auth/verify', (b) => {
     const u = [...db.users.values()].find((x) => x.verify && x.verify.token === String(b.token || ''))
     if (!u || u.verify.expires < Date.now()) return err(400, 'invalid_token', 'This verification link is invalid or has expired. Send a new one from your dashboard.')

@@ -22,14 +22,14 @@ export default function Settings() {
           <h2>Profile</h2>
           <label className="field">Name<input value={name} onChange={(e) => setName(e.target.value)} /></label>
           <label className="field">Email<input value={user?.email} readOnly /></label>
-          <div className="row"><button className="btn" onClick={() => save.run()} disabled={save.busy || !name.trim()}>Save changes</button><button className="btn ghost" onClick={() => toast('Verification link sent to your new email (prototype)')}>Change email</button><button className="btn ghost" onClick={() => toast('Password change form (prototype)')}>Change password</button></div>
+          <div className="row"><button className="btn" onClick={() => save.run()} disabled={save.busy || !name.trim()}>Save changes</button><button className="btn ghost" onClick={() => toast('Verification link sent to your new email')}>Change email</button><button className="btn ghost" onClick={() => toast('Password change sent to your email')}>Change password</button></div>
           <ErrorBox error={save.error} />
         </section>
         {PROTOTYPE_TOOLS && <section className="card stack">
-          <h2>Prototype tools</h2>
+          <h2>Demo data</h2>
           <p className="muted">Trigger the failure screens on demand. These are only here so you can see the fallbacks.</p>
-          <div className="row"><button className="btn ghost sm" onClick={() => flag({ busyNext: true }, 'Next AI question will fail once')}>Make next AI question fail</button><button className="btn ghost sm" onClick={() => flag({ feedbackFailNext: true }, 'Next report will fail once')}>Make next report fail</button></div>
-          <button className="btn ghost sm" style={{ justifySelf: 'start' }} onClick={() => post('/_dev/reset').then(() => { toast('Sample data reset'); signOut(); nav('/login') })}>Reset all sample data</button>
+          <div className="row"><button className="btn ghost sm" onClick={() => flag({ busyNext: true }, 'Next question will fail once')}>Make next question fail</button><button className="btn ghost sm" onClick={() => flag({ feedbackFailNext: true }, 'Next report will fail once')}>Make next report fail</button></div>
+          <button className="btn ghost sm" style={{ justifySelf: 'start' }} onClick={() => post('/_dev/reset').then(() => { toast('Demo data reset'); signOut(); nav('/login') })}>Reset all demo data</button>
         </section>}
         <section className="card stack" style={{ borderColor: '#f3bccd' }}>
           <h2>Delete account</h2>

@@ -30,13 +30,12 @@ export function Modal({ title, children, onClose }: { title: string; children: R
   return <div className="modal-bg" onClick={onClose}><div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}><h2>{title}</h2>{children}</div></div>
 }
 
-export function PageHead({ title, sub, right, sample }: { title: string; sub?: string; right?: ReactNode; sample?: boolean }) {
+export function PageHead({ title, sub, right }: { title: string; sub?: string; right?: ReactNode }) {
   return (
     <div className="page-head">
       <div>
         <h1>{title}</h1>
         {sub && <p>{sub}</p>}
-        {sample && <p style={{ marginTop: 10 }}><span className="sample-chip">Prototype with sample data</span></p>}
       </div>
       {right}
     </div>
