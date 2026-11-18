@@ -121,6 +121,7 @@ export function DailyTopics() {
           ))}
         </div>
         <p className="small muted">Streaks, XP and topic progress are saved in this browser only.</p>
+        <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>Ready to try it out with peer-to-peer interviews?</b> That's the last step - finishing a peer mock completes the whole practice flow.</span></div>
         <StepNav next="/daily/peer" />
       </div>
     </>
@@ -139,7 +140,8 @@ export function DailyPeer() {
             {(() => {
               const matches = peers.data.peers.filter((p) => p.overlap.length)
               const upcoming = peers.data.bookings.filter((b) => b.status !== 'cancelled')
-              if (upcoming.length) return <p className="small"><b>{upcoming.length} mock{upcoming.length > 1 ? 's' : ''} booked.</b> <Link to="/peer-mocks">See your bookings</Link></p>
+              if (peers.data.bookings.some((b) => b.status === 'done')) return <p className="small"><b>Peer mock finished - that's the whole practice flow complete.</b> <Link to="/peer-mocks">See your bookings</Link></p>
+              if (upcoming.length) return <p className="small"><b>{upcoming.length} mock{upcoming.length > 1 ? 's' : ''} booked.</b> Finish it with your peer and the whole practice flow is done. <Link to="/peer-mocks">See your bookings</Link></p>
               if (!peers.data.mine.length) return <p className="small muted">No slots marked yet. Mark a few and peers free at the same time will appear here.</p>
               if (!matches.length) return <p className="small muted">{peers.data.mine.length} slot{peers.data.mine.length > 1 ? 's' : ''} marked. No peer overlaps yet - add more times to find a match.</p>
               return (
