@@ -55,7 +55,7 @@ export default function Roadmap() {
       <PageHead title="Resources and learning roadmap" sub="Free resources from across the internet, ranked by peers and experienced PMs. The planner picks what to study first based on your weak spots and the time you have." sample />
       <div className="tabs" style={{ marginBottom: 18 }}><button className={'tab' + (tab === 'plan' ? ' on' : '')} onClick={() => setTab('plan')}>My roadmap</button><button className={'tab' + (tab === 'dir' ? ' on' : '')} onClick={() => setTab('dir')}>Directory</button></div>
       {tab === 'plan' ? (
-        <div className="grid2" style={{ gridTemplateColumns: 'minmax(0,4fr) minmax(0,8fr)', alignItems: 'start' }}>
+        <div className="split-4-8">
           <section className="card stack">
             <h2>Your gaps</h2>
             <p className="small muted">Pulled from your interview reports. Untried areas count as gaps too.</p>

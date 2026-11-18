@@ -226,3 +226,8 @@ table.t th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 26px; width: 100%; }
 .step { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 4px; text-align: left; }
 @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
+
+/* ---------- mobile stacking for split layouts (fix: inline grid overrides media queries) ---------- */
+.split-5-7 { display: grid; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: 16px; align-items: start; }
+.split-4-8 { display: grid; grid-template-columns: minmax(0,4fr) minmax(0,8fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .split-5-7, .split-4-8 { grid-template-columns: 1fr; } }

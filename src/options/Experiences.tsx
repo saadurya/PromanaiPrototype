@@ -38,7 +38,7 @@ export default function Experiences() {
           <select aria-label="Industry" value={fi} onChange={(e) => setFi(e.target.value)} style={{ width: 'auto' }}><option value="">All industries</option>{INDUSTRIES.map((i) => <option key={i}>{i}</option>)}</select>
           <select aria-label="Round" value={fr} onChange={(e) => setFr(e.target.value)} style={{ width: 'auto' }}><option value="">All rounds</option>{ROUNDS.map((i) => <option key={i}>{i}</option>)}</select>
         </div>
-        <div className="grid2" style={{ gridTemplateColumns: 'minmax(0,5fr) minmax(0,7fr)', alignItems: 'start' }}>
+        <div className="split-5-7">
           <div className="stack">
             {data && list.length === 0 && <Empty title="No experiences match">Clear a filter, or share yours.</Empty>}
             {list.map((e) => (
