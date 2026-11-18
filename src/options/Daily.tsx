@@ -113,8 +113,9 @@ export function DailyTopics() {
             <div key={t.id} className="card stack">
               <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
               <div className="row">
-                {!t.done ? <Link className="btn sm lime" to={`/interview/setup?category=${t.category}&from=daily`}>Practise this topic</Link> : <span className="small muted">Finished in today's practice interview</span>}
+                <Link className="btn sm lime" to={`/interview/setup?category=${t.category}&from=daily`}>Practise this topic</Link>
               </div>
+              {t.done && <span className="small muted">Finished in today's practice interview - you can practise again, XP is counted once.</span>}
             </div>
           ))}
         </div>

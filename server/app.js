@@ -122,7 +122,8 @@ export function createCore(opts = {}) {
     i.status = 'completed'
     i.end_reason = reason
     i.feedback_status = 'none'
-    if (c && i.origin === 'daily') completeDailyTopic(c, i.category)
+    // Daily topic credit requires actual practice: at least one submitted answer. Ending with zero answers earns nothing.
+    if (c && i.origin === 'daily' && i.messages.some((m) => m.role === 'candidate' && m.submitted !== false)) completeDailyTopic(c, i.category)
     // An answer still being worked on is kept in the transcript but marked unsubmitted, so it is never scored.
     if (i.draft?.text && i.messages.at(-1)?.role === 'interviewer' && i.draft.for_seq === i.messages.at(-1).seq) addMsg(i, 'candidate', i.draft.text, { submitted: false })
     i.draft = null
