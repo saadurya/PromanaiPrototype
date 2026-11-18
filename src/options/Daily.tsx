@@ -29,7 +29,10 @@ const practiceLink = (e: { round: string; industry: string }) => {
 function StepNav({ next, endLabel }: { next?: string; endLabel?: string }) {
   return (
     <div className="row between" style={{ flexWrap: 'wrap' }}>
-      <span className="small muted">Every step is optional - skip whatever you don't need today.</span>
+      <span className="row">
+        <span className="small muted">Every step is optional - skip whatever you don't need today.</span>
+        <Link className="btn ghost sm" to="/dashboard">Exit to Dashboard</Link>
+      </span>
       {next ? (
         <span className="row">
           <Link className="btn ghost" to={next}>Skip</Link>
@@ -99,15 +102,9 @@ export function DailyTopics() {
   if (!data) return <ErrorBox error={error} onRetry={reload} />
   return (
     <>
-      <PageHead title="Daily practice" sub="Today's five AI interview topics, across the interview categories. Practise any of them with the interviewer - finish all five to keep your streak going." />
+      <PageHead title="Daily practice" sub="Today's five AI interview topics, across the interview categories. Practise any of them with the interviewer - your streak, XP and progress show on the Dashboard." />
       <div className="stack lg">
         <ActiveBanner />
-        <section className="card row" style={{ justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap' }}>
-          <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.streakDays}</div><div className="small muted">day streak</div></div>
-          <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.xp}</div><div className="small muted">total XP</div></div>
-          <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.xpToday}</div><div className="small muted">XP today</div></div>
-          <div><div style={{ fontSize: 28, fontWeight: 700 }}>{data.doneCount}/{data.topics.length}</div><div className="small muted">today's topics</div></div>
-        </section>
         <ErrorBox error={complete.error} />
         <div className="grid2">
           {data.topics.map((t) => (
@@ -120,7 +117,6 @@ export function DailyTopics() {
             </div>
           ))}
         </div>
-        <p className="small muted">Streaks, XP and topic progress are saved in this browser only.</p>
         <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>Ready to try it out with peer-to-peer interviews?</b> That's the last step - finishing a peer mock completes the whole practice flow.</span></div>
         <StepNav next="/daily/peer" />
       </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CATEGORY_LABELS, get, api, post } from '../api'
 import { Empty, ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad, useToast } from '../ui'
 
@@ -60,7 +61,7 @@ export default function PeerMocks() {
             <div key={b.id} style={{ borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
               <div className="row between">
                 <div><b>{b.peerName}</b> · {CATEGORY_LABELS[b.focus]}<div className="small muted">{slotLabel(b.slot)}</div></div>
-                {b.status === 'done' && b.feedbackGiven ? <span className="pill ok">Feedback sent</span> : <div className="row"><button className="btn sm" onClick={() => setFb(b)}>Finish and give feedback</button><button className="btn sm ghost" onClick={() => post(`/bookings/${b.id}/cancel`).then(() => { toast('Session cancelled'); reload() })}>Cancel</button></div>}
+                {b.status === 'done' && b.feedbackGiven ? <span className="pill ok">Feedback sent</span> : <div className="row"><span className="pill">Booked - not finished yet</span><button className="btn sm" onClick={() => setFb(b)}>Finish and give feedback</button><button className="btn sm ghost" onClick={() => post(`/bookings/${b.id}/cancel`).then(() => { toast('Session cancelled'); reload() })}>Cancel</button></div>}
               </div>
               {data.questionBank?.[b.focus] && (
                 <details className="small" style={{ marginTop: 6 }}>
@@ -69,6 +70,15 @@ export default function PeerMocks() {
                 </details>
               )}
             </div>))}
+        </section>
+        <section className="card stack">
+          <h2>Where next?</h2>
+          <p className="small muted">Whether a mock is booked, finished or still waiting on feedback, you can move on from here - nothing on this page is a dead end.</p>
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <Link className="btn lime" to="/dashboard">Go to Dashboard</Link>
+            <Link className="btn ghost" to="/daily">Daily practice</Link>
+            <Link className="btn ghost" to="/interview/setup">New AI interview</Link>
+          </div>
         </section>
       </div>
       {book && <BookModal peer={book} questionBank={data.questionBank} onClose={() => setBook(null)} onDone={() => { setBook(null); toast('Session confirmed'); reload() }} />}
