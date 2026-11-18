@@ -36,7 +36,7 @@ export default function Daily() {
   if (!data) return <ErrorBox error={error} onRetry={reload} />
   return (
     <>
-      <PageHead title="Daily practice" sub="Your daily loop: practise with the interviewer, learn from interview experiences, build your plan from the feedback, then try a peer mock." />
+      <PageHead title="Daily practice" sub="Your connected loop: learn from interview experiences, build your learning plan from your own interviews, practise it with a peer - and keep the streak going with today's topics." />
       <div className="stack lg">
         {act.data?.active && (
           <div className="banner info"><span><b>Interview in progress:</b> {CATEGORY_LABELS[act.data.active.category]}, {act.data.active.difficulty}.</span><Link className="btn sm" to="/interview/live">Resume</Link></div>
@@ -49,36 +49,7 @@ export default function Daily() {
         </section>
 
         <section className="stack">
-          <h2>1 · Practise with the interviewer</h2>
-          <p className="muted">Five topics a day across the interview categories. Finish all five to keep your streak going and unlock today's bonus topic.</p>
-          <ErrorBox error={complete.error} />
-          <div className="grid2">
-            {data.topics.map((t) => (
-              <div key={t.id} className="card stack">
-                <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
-                <div className="row">
-                  <Link className="btn sm lime" to={`/interview/setup?category=${t.category}`}>Practise this topic</Link>
-                  {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="card stack">
-            <div className="row between"><h3>Your recent interviews and feedback</h3><Link to="/history">See all</Link></div>
-            {list.loading ? <Spinner /> : list.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : recent.length === 0 ? (
-              <Empty title="No interviews yet">Your first scored report will show up here.<Link className="btn" to="/interview/setup">Start your first interview</Link></Empty>
-            ) : recent.map((i) => (
-              <Link key={i.id} to={`/history/${i.id}`} className="row between" style={{ textDecoration: 'none', color: 'inherit', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-                <span><b>{CATEGORY_LABELS[i.category]}</b> <span className="muted small">· {i.difficulty} · {fmtDate(i.created_at)}</span></span>
-                <span className="pill">{i.feedback_status === 'ready' ? 'Report ready' : i.status === 'in_progress' ? 'In progress' : 'No score'}</span>
-              </Link>
-            ))}
-            <p className="small muted">Each report ends with the gaps to work on next - those feed your learning plan in step 3.</p>
-          </div>
-        </section>
-
-        <section className="stack">
-          <h2>2 · Learn from interview experiences</h2>
+          <h2>1 · Learn from interview experiences</h2>
           <p className="muted">Read how a round went: what was asked, how the candidate answered, how a senior PM ranked the answers, and the outcome. Then practise the same round and industry yourself.</p>
           {exps.loading ? <Spinner /> : exps.error ? <ErrorBox error={exps.error} onRetry={exps.reload} /> : (
             <div className="grid2">
@@ -102,8 +73,20 @@ export default function Daily() {
         </section>
 
         <section className="stack">
-          <h2>3 · Build your learning plan</h2>
-          <p className="muted">Your AI interview feedback turns into a dated roadmap on its own page. The planner picks resources for your weak spots - videos, articles, templates and drills - and the PM AI tools that fit your plan topics, so the learning connects back to what the feedback flagged.</p>
+          <h2>2 · Build your learning plan</h2>
+          <p className="muted">Your AI interview feedback and the experiences you share turn into a dated roadmap on its own page. The planner picks resources for your weak spots - videos, articles, templates and drills - and the PM AI tools that fit your plan topics, so the learning connects back to what the feedback flagged.</p>
+          <div className="card stack">
+            <div className="row between"><h3>Your recent interviews and feedback</h3><Link to="/history">See all</Link></div>
+            {list.loading ? <Spinner /> : list.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : recent.length === 0 ? (
+              <Empty title="No interviews yet">Your first scored report will show up here.<Link className="btn" to="/interview/setup">Start your first interview</Link></Empty>
+            ) : recent.map((i) => (
+              <Link key={i.id} to={`/history/${i.id}`} className="row between" style={{ textDecoration: 'none', color: 'inherit', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
+                <span><b>{CATEGORY_LABELS[i.category]}</b> <span className="muted small">· {i.difficulty} · {fmtDate(i.created_at)}</span></span>
+                <span className="pill">{i.feedback_status === 'ready' ? 'Report ready' : i.status === 'in_progress' ? 'In progress' : 'No score'}</span>
+              </Link>
+            ))}
+            <p className="small muted">Each report ends with the gaps to work on next - those feed your learning plan here.</p>
+          </div>
           <div className="row">
             <Link className="btn" to="/roadmap">Build your learning plan</Link>
             <Link className="btn ghost" to="/peer-mocks">Peer to peer</Link>
@@ -111,7 +94,7 @@ export default function Daily() {
         </section>
 
         <section className="stack">
-          <h2>4 · Practise with a peer</h2>
+          <h2>3 · Practise with a peer</h2>
           <p className="muted">Once the learning lands, mark when you are free. Peers free at the same time show up, you book a live mock, take turns as interviewer and candidate, and swap feedback - the same loop, this time with a peer.</p>
           {peers.loading ? <Spinner /> : peers.error ? <ErrorBox error={peers.error} onRetry={peers.reload} /> : peers.data && (
             <div className="card stack">
@@ -132,6 +115,23 @@ export default function Daily() {
           )}
           <div className="row">
             <Link className="btn" to="/peer-mocks">Mark your availability</Link>
+          </div>
+        </section>
+
+        <section className="stack">
+          <h2>4 · Today's five topics</h2>
+          <p className="muted">Five topics a day across the interview categories. Finish all five to keep your streak going and unlock today's bonus topic.</p>
+          <ErrorBox error={complete.error} />
+          <div className="grid2">
+            {data.topics.map((t) => (
+              <div key={t.id} className="card stack">
+                <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
+                <div className="row">
+                  <Link className="btn sm lime" to={`/interview/setup?category=${t.category}`}>Practise this topic</Link>
+                  {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 

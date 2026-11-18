@@ -6,7 +6,7 @@ import AiTools from './AiTools'
 
 type Res = { id: string; title: string; type: string; tier: 'must' | 'should' | 'could'; minutes: number; topics: string[]; up: number; expertUp: number; source: string; voted: number; score: number }
 type ToolMin = { id: string; name: string; category: string; topics?: string[] }
-type Gap = { area: string; label: string; score: number | null }
+type Gap = { area: string; label: string; score: number | null; experience?: { company: string; round: string } }
 type Plan = { weeks: { week: number; minutes: number; items: (Res & { area: string })[] }[]; budgetMinutes: number; plannedMinutes: number; mustTotal: number; mustCovered: number; notFitted: Res[] }
 const TIER = { must: 'Must know', should: 'Should know', could: 'Could know' }
 const TYPE = { video: 'Video', github: 'GitHub repo', diagram: 'Diagram', article: 'Article' } as Record<string, string>
@@ -42,7 +42,7 @@ export default function Roadmap() {
   const [plan, setPlan] = useState<Plan | null>(null)
   const [topic, setTopic] = useState(topicParam)
   const [tier, setTier] = useState('')
-  useEffect(() => { if (data && !picked.length) setPicked(data.gaps.filter((g) => g.score === null || g.score < 3.2).map((g) => g.area).slice(0, 3)) }, [data]) // eslint-disable-line
+  useEffect(() => { if (data && !picked.length) setPicked(data.gaps.filter((g) => g.score === null || g.score < 3.2 || g.experience).map((g) => g.area).slice(0, 4)) }, [data]) // eslint-disable-line
   const gen = useAction(async () => { const r = await post<Plan>('/roadmap', { areas: data!.gaps.filter((g) => picked.includes(g.area)).map((g) => ({ area: g.area, score: g.score })), hoursPerWeek: hours, weeks }); setPlan(r) })
   const vote = useAction(async (id: string, v: 1 | -1) => { const r = await post(`/resources/${id}/vote`, { vote: v }); setData({ ...data!, resources: r.resources }) })
   if (loading && !data) return <Spinner />
@@ -59,11 +59,11 @@ export default function Roadmap() {
         <div className="split-4-8">
           <section className="card stack">
             <h2>Your gaps</h2>
-            <p className="small muted">Pulled from your interview reports. Untried areas count as gaps too.</p>
+            <p className="small muted">Pulled from your AI interview reports and the interview experiences you share. Untried areas count as gaps too.</p>
             {data.gaps.map((g) => (
               <label key={g.area} className="row" style={{ cursor: 'pointer' }}>
                 <input type="checkbox" style={{ width: 18 }} checked={picked.includes(g.area)} onChange={(e) => setPicked(e.target.checked ? [...picked, g.area] : picked.filter((x) => x !== g.area))} />
-                <span style={{ flex: 1 }}>{g.label}</span>{g.score === null ? <span className="pill line">Not practised</span> : <span className={'pill' + (g.score < 3 ? ' warn' : '')}>{g.score}/5</span>}
+                <span style={{ flex: 1 }}>{g.label}</span>{g.experience && <span className="pill lime">From your {g.experience.company} experience</span>}{g.score === null ? <span className="pill line">Not practised</span> : <span className={'pill' + (g.score < 3 ? ' warn' : '')}>{g.score}/5</span>}
               </label>
             ))}
             <div className="grid2"><label className="field">Hours per week<input type="number" min={1} max={40} value={hours} onChange={(e) => setHours(Number(e.target.value))} /></label><label className="field">Weeks until interview<input type="number" min={1} max={12} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} /></label></div>

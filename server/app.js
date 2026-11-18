@@ -596,7 +596,17 @@ export function createCore(opts = {}) {
   })
 
   // Option 4: resources + roadmap
-  on('GET', '/api/resources', (b, c) => ({ body: { resources: resources(c), gaps: avgByCategory(c) } }))
+  on('GET', '/api/resources', (b, c) => {
+    const gaps = avgByCategory(c)
+    // An experience the person shared also feeds their plan: its round marks that area, whatever the AI interview scores say.
+    const roundToCategory = { 'product sense': 'product-sense', execution: 'execution', metrics: 'metrics', strategy: 'strategy', behavioral: 'behavioral' }
+    const mineExp = db.experiences.filter((e) => e.author_id === c.user.id)
+    gaps.forEach((g) => {
+      const e = mineExp.find((x) => roundToCategory[String(x.round || '').toLowerCase()] === g.area)
+      if (e) g.experience = { company: e.company, round: e.round }
+    })
+    return { body: { resources: resources(c), gaps } }
+  })
   on('POST', '/api/resources/:id/vote', (b, c, id) => {
     if (!S.RESOURCES.some((r) => r.id === id)) return err(404, 'not_found', 'Resource not found.')
     const v = b.vote === 1 ? 1 : b.vote === -1 ? -1 : 0
