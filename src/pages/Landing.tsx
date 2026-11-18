@@ -1,4 +1,3 @@
-import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { ErrorBox, useAction } from '../ui'
@@ -6,9 +5,7 @@ import { ErrorBox, useAction } from '../ui'
 export default function Landing() {
   const { user, signIn } = useAuth()
   const nav = useNavigate()
-  const [f, setF] = useState({ name: '' })
-  const enter = useAction(async () => { await signIn('enter', f); nav('/home', { replace: true }) })
-  const on = (e: FormEvent) => { e.preventDefault(); enter.run() }
+  const enter = useAction(async () => { await signIn('enter', {}); nav('/home', { replace: true }) })
   return (
     <div className="land">
       <header className="land-nav">
@@ -26,12 +23,11 @@ export default function Landing() {
               <Link className="btn lime lg" to="/home">Start an interview</Link>
             </div>
           ) : (
-            <form className="stack" style={{ maxWidth: 380 }} onSubmit={on}>
-              <label className="field">Your name<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoComplete="name" required /></label>
+            <div className="stack" style={{ maxWidth: 380, alignItems: 'flex-start' }}>
               <ErrorBox error={enter.error} />
-              <button className="btn lime lg" disabled={enter.busy}>{enter.busy ? 'Please wait…' : 'Login'}</button>
-              <p className="muted small">Login with just your name for now. Email or phone sign-in comes later.</p>
-            </form>
+              <button className="btn lime lg" disabled={enter.busy} onClick={() => enter.run()}>{enter.busy ? 'Please wait…' : 'Login'}</button>
+              <p className="muted small">One tap for now. Email or phone sign-in comes later.</p>
+            </div>
           )}
           <p className="muted small" style={{ marginTop: 14 }}>Built for aspiring APMs and practising PMs. Works best on desktop Chrome or Edge.</p>
         </div>

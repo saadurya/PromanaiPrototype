@@ -438,12 +438,11 @@ export function createCore(opts = {}) {
     const email = String(b.email || '').trim().toLowerCase()
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return err(400, 'invalid_input', 'Enter a valid email address.')
     const name = String(b.name || '').trim().slice(0, 60)
-    if (!name && !email) return err(400, 'invalid_input', 'Enter your name.')
-    // Name-only entry reuses the one email-less persona on this browser; an email picks that person's own persona.
+    // One-tap login: no name, email or phone needed for now. Each browser reuses its own demo persona.
     let u = email ? findByEmail(email) : [...db.users.values()].find((x) => !x.email && !x.pw)
     if (u && u.pw) return err(409, 'password_account', 'That email belongs to a password account. Use a different email for this demo.')
     if (!u) {
-      u = { id: 'u' + rid(), email, name: name || email.split('@')[0], verified: true, pw: null, verify: null }
+      u = { id: 'u' + rid(), email, name: name || (email ? email.split('@')[0] : 'Guest'), verified: true, pw: null, verify: null }
       db.users.set(u.id, u)
       // New personas get the same practice history as the demo so the full loop (feedback, gaps, plan) is visible on a first visit.
       db.interviews.push(...S.seedInterviews().map((i) => ({ ...i, owner_id: u.id })))
