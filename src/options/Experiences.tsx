@@ -71,6 +71,11 @@ export default function Experiences() {
           </div>
         </div>
         {review && open && <ReviewModal exp={open} onClose={() => setReview(false)} onDone={() => { setReview(false); reload() }} />}
+        <section className="card stack" style={{ marginTop: 18 }}>
+          <h2>What next</h2>
+          <p className="small muted">Take what these rounds teach into your own plan, or put it into practice with a peer.</p>
+          <div className="row"><Link className="btn" to="/roadmap">Build your learning plan</Link><Link className="btn ghost" to="/peer-mocks">Peer to peer</Link></div>
+        </section>
       </>)}
     </>
   )

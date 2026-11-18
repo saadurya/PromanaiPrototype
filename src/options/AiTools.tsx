@@ -7,7 +7,7 @@ type Tool = { id: string; name: string; category: string; topics?: string[]; use
 const TOPIC_LABELS: Record<string, string> = { 'product-sense': 'Product sense', execution: 'Execution', metrics: 'Metrics', strategy: 'Strategy', behavioral: 'Behavioral', 'ai-for-pm': 'AI for PMs' }
 type Data = { tools: Tool[]; industries: string[]; categories: string[] }
 
-export default function AiTools() {
+export default function AiTools({ embedded }: { embedded?: boolean }) {
   const { data, setData, loading, error, reload } = useLoad(() => get<Data>('/ai-tools'))
   const [cat, setCat] = useState(''); const [ind, setInd] = useState(''); const [q, setQ] = useState('')
   const [sort, setSort] = useState<'votes' | 'influence'>('votes')
@@ -19,7 +19,7 @@ export default function AiTools() {
   const updates = data.tools.flatMap((t) => t.updates.map((u) => ({ ...u, tool: t.name }))).slice(0, 5)
   return (
     <>
-      <PageHead title="PM AI tools and intelligence" sub="Which AI tools PMs use, in which industries, for what, and how much they change the work. Votes and reports come from PMs, with experienced voices shown by name." />
+      {!embedded && <PageHead title="PM AI tools and intelligence" sub="Which AI tools PMs use, in which industries, for what, and how much they change the work. Votes and reports come from PMs, with experienced voices shown by name." />}
       <div className="stack lg">
         <section className="card stack">
           <h2>Recent developments</h2>

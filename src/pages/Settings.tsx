@@ -21,7 +21,7 @@ export default function Settings() {
         <section className="card stack">
           <h2>Profile</h2>
           <label className="field">Name<input value={name} onChange={(e) => setName(e.target.value)} /></label>
-          <label className="field">Email<input value={user?.email} readOnly /></label>
+          <label className="field">Email<input value={user?.email || ''} placeholder="Not added yet" readOnly /></label>
           <div className="row"><button className="btn" onClick={() => save.run()} disabled={save.busy || !name.trim()}>Save changes</button><button className="btn ghost" onClick={() => toast('Verification link sent to your new email')}>Change email</button><button className="btn ghost" onClick={() => toast('Password change sent to your email')}>Change password</button></div>
           <ErrorBox error={save.error} />
         </section>

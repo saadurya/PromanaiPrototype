@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { get, post } from '../api'
 import { ErrorBox, PageHead, Spinner, useAction, useLoad } from '../ui'
+import AiTools from './AiTools'
 
 type Res = { id: string; title: string; type: string; tier: 'must' | 'should' | 'could'; minutes: number; topics: string[]; up: number; expertUp: number; source: string; voted: number; score: number }
 type ToolMin = { id: string; name: string; category: string; topics?: string[] }
@@ -34,7 +35,7 @@ export default function Roadmap() {
   const toolsLoad = useLoad(() => get<{ tools: ToolMin[] }>('/ai-tools'))
   const [params] = useSearchParams()
   const topicParam = params.get('topic') || ''
-  const [tab, setTab] = useState<'plan' | 'dir'>(topicParam ? 'dir' : 'plan')
+  const [tab, setTab] = useState<'plan' | 'dir' | 'tools'>(topicParam ? 'dir' : 'plan')
   const [picked, setPicked] = useState<string[]>([])
   const [hours, setHours] = useState(4)
   const [weeks, setWeeks] = useState(3)
@@ -53,8 +54,8 @@ export default function Roadmap() {
   return (
     <>
       <PageHead title="Resources and learning roadmap" sub="Free resources from across the internet, ranked by peers and experienced PMs. The planner picks what to study first based on your weak spots and the time you have." />
-      <div className="tabs" style={{ marginBottom: 18 }}><button className={'tab' + (tab === 'plan' ? ' on' : '')} onClick={() => setTab('plan')}>My roadmap</button><button className={'tab' + (tab === 'dir' ? ' on' : '')} onClick={() => setTab('dir')}>Directory</button></div>
-      {tab === 'plan' ? (
+      <div className="tabs" style={{ marginBottom: 18 }}><button className={'tab' + (tab === 'plan' ? ' on' : '')} onClick={() => setTab('plan')}>My roadmap</button><button className={'tab' + (tab === 'dir' ? ' on' : '')} onClick={() => setTab('dir')}>Directory</button><button className={'tab' + (tab === 'tools' ? ' on' : '')} onClick={() => setTab('tools')}>AI tools</button></div>
+      {tab === 'tools' ? <AiTools embedded /> : tab === 'plan' ? (
         <div className="split-4-8">
           <section className="card stack">
             <h2>Your gaps</h2>

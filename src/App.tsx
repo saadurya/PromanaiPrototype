@@ -10,9 +10,10 @@ import History from './pages/History'
 import Settings from './pages/Settings'
 import Experiences from './options/Experiences'
 import Daily from './options/Daily'
+import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
 import PeerMocks from './options/PeerMocks'
 import Roadmap from './options/Roadmap'
-import AiTools from './options/AiTools'
 
 function Shell() {
   const { user, signOut } = useAuth()
@@ -33,7 +34,7 @@ function Shell() {
         </button>
         <NavLink to="/home" className="brand"><i />ProManAI</NavLink>
         <nav className="topnav" aria-label="Sections">
-          <NavLink to="/home">Daily practice</NavLink>
+          <NavLink to="/daily">Daily practice</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
         </nav>
       </header>
@@ -44,8 +45,10 @@ function Shell() {
           <button className="side-close" aria-label="Close menu" onClick={() => setMenuOpen(false)}>✕</button>
         </div>
         <nav className="nav" aria-label="Main">
-          <NavLink to="/home">Daily practice</NavLink>
+          <NavLink to="/home">Home</NavLink>
           <NavLink to="/interview/setup">New interview</NavLink>
+          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/daily">Daily practice</NavLink>
           <NavLink to="/history">History</NavLink>
           <NavLink to="/settings">Settings</NavLink>
         </nav>
@@ -74,16 +77,16 @@ export default function App() {
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/signup" element={<Navigate to="/" replace />} />
           <Route element={<Private />}>
-            <Route path="/home" element={<Daily />} />
-            <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-            <Route path="/daily" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/daily" element={<Daily />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/peer-mocks" element={<PeerMocks />} />
             <Route path="/roadmap" element={<Roadmap />} />
-            <Route path="/ai-tools" element={<AiTools />} />
+            <Route path="/ai-tools" element={<Navigate to="/roadmap" replace />} />
             {/* Pre-rework "ideas to compare" routes */}
             <Route path="/ideas" element={<Navigate to="/home" replace />} />
             <Route path="/ideas/industry" element={<Navigate to="/interview/setup" replace />} />

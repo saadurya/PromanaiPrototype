@@ -24,7 +24,7 @@ export default function Setup() {
   const steps = ['Level', 'Industry', 'Focus', 'Confirm']
   return (
     <>
-      <PageHead title="Set up your interview" sub="Four quick steps. The clock starts only when you confirm." />
+      <PageHead title="Set up your AI interview" sub="Four quick steps. The clock starts only when you confirm." />
       <div style={{ maxWidth: 760, marginBottom: 14 }}><StorageCleanup key={startErr === 'storage_full' ? 'full' : 'ok'} onFreed={(st) => { if (!st.full) start.setError(null) }} /></div>
       <div className="stepper">{steps.map((s, i) => <div key={s} className={'step' + (i === step ? ' on' : i < step ? ' done' : '')}><i>{i < step ? '✓' : i + 1}</i>{s}</div>)}</div>
       <div className="card stack lg" style={{ maxWidth: 760 }}>

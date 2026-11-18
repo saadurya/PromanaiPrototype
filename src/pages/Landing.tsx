@@ -6,7 +6,7 @@ import { ErrorBox, useAction } from '../ui'
 export default function Landing() {
   const { user, signIn } = useAuth()
   const nav = useNavigate()
-  const [f, setF] = useState({ name: '', email: '' })
+  const [f, setF] = useState({ name: '' })
   const enter = useAction(async () => { await signIn('enter', f); nav('/home', { replace: true }) })
   const on = (e: FormEvent) => { e.preventDefault(); enter.run() }
   return (
@@ -28,9 +28,9 @@ export default function Landing() {
           ) : (
             <form className="stack" style={{ maxWidth: 380 }} onSubmit={on}>
               <label className="field">Your name<input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoComplete="name" required /></label>
-              <label className="field">Your email<input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" required /></label>
               <ErrorBox error={enter.error} />
-              <button className="btn lime lg" disabled={enter.busy}>{enter.busy ? 'Please wait…' : 'Start an interview'}</button>
+              <button className="btn lime lg" disabled={enter.busy}>{enter.busy ? 'Please wait…' : 'Login'}</button>
+              <p className="muted small">Login with just your name for now. Email or phone sign-in comes later.</p>
             </form>
           )}
           <p className="muted small" style={{ marginTop: 14 }}>Built for aspiring APMs and practising PMs. Works best on desktop Chrome or Edge.</p>
