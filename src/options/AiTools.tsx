@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { get, post } from '../api'
 import { ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad } from '../ui'
 
-type Tool = { id: string; name: string; category: string; uses: string[]; industries: string[]; companies: string[]; influence: number; adoption: string; updates: { when: string; text: string }[]; up: number; voted: number; expert: { name: string; role: string; vote: number }[]; reports: { use: string; industry: string; impact: number; role: string; when: string }[] }
+type Tool = { id: string; name: string; category: string; topics?: string[]; uses: string[]; industries: string[]; companies: string[]; influence: number; adoption: string; updates: { when: string; text: string }[]; up: number; voted: number; expert: { name: string; role: string; vote: number }[]; reports: { use: string; industry: string; impact: number; role: string; when: string }[] }
+const TOPIC_LABELS: Record<string, string> = { 'product-sense': 'Product sense', execution: 'Execution', metrics: 'Metrics', strategy: 'Strategy', behavioral: 'Behavioral', 'ai-for-pm': 'AI for PMs' }
 type Data = { tools: Tool[]; industries: string[]; categories: string[] }
 
 export default function AiTools() {
@@ -45,6 +47,7 @@ export default function AiTools() {
                 </div>
                 {t.updates.map((u, i) => <div key={i} className="small"><span className="pill lime" style={{ marginRight: 8 }}>{u.when}</span>{u.text}</div>)}
                 {t.expert.length > 0 && <div className="small muted">Endorsed by {t.expert.map((e) => `${e.name} (${e.role})`).join(', ')}</div>}
+                {t.topics && t.topics.length > 0 && <Link className="small" to={`/roadmap?topic=${t.topics[0]}`}>Learn {TOPIC_LABELS[t.topics[0]]} in the roadmap</Link>}
                 {t.reports.map((r, i) => <div key={i} className="review"><div className="row between small"><b>{r.role} · {r.industry}</b><span className="row"><Stars value={r.impact} /> {r.when}</span></div>{r.use}</div>)}
                 <button className="btn sm ghost" style={{ justifySelf: 'start' }} onClick={() => setReport(t)}>Share how you use {t.name}</button>
               </div>

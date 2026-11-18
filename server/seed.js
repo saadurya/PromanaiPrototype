@@ -182,14 +182,14 @@ export const RESOURCES = [
 ]
 
 export const AI_TOOLS = [
-  { id: 't1', name: 'ChatGPT', category: 'General assistant', uses: ['Drafting PRDs', 'Brainstorming options', 'Summarising research'], industries: ['SaaS', 'E-commerce', 'Consumer Tech', 'EdTech'], companies: ['Tasklane (sample)', 'Cartly (sample)'], influence: 4.3, adoption: 'Widely used', updates: [{ when: 'This week', text: 'Sample update: longer context for document analysis.' }], up: 188, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }, { name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't2', name: 'Claude', category: 'General assistant', uses: ['Long-document synthesis', 'Spec review', 'Competitor research'], industries: ['SaaS', 'FinTech', 'HealthTech'], companies: ['Northwind Pay (sample)', 'Pulse Clinic (sample)'], influence: 4.2, adoption: 'Widely used', updates: [{ when: 'Last week', text: 'Sample update: improved handling of large files.' }], up: 164, expert: [{ name: 'Meera Iyer', role: 'Senior PM, Payments', vote: 1 }] },
-  { id: 't3', name: 'Notion AI', category: 'Docs and specs', uses: ['Meeting notes to action items', 'Spec first drafts', 'Wiki Q&A'], industries: ['SaaS', 'Communication'], companies: ['Hushline (sample)'], influence: 3.4, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: Q&A across workspace pages.' }], up: 92, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't4', name: 'Dovetail', category: 'Research synthesis', uses: ['Tagging interview transcripts', 'Theme clustering', 'Insight reports'], industries: ['EdTech', 'HealthTech', 'Consumer Tech'], companies: ['Lumina Learn (sample)'], influence: 3.6, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: auto-generated highlight reels.' }], up: 71, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
-  { id: 't5', name: 'Amplitude', category: 'Analytics', uses: ['Natural-language chart questions', 'Anomaly alerts', 'Funnel diagnosis'], industries: ['E-commerce', 'FinTech', 'Social Media'], companies: ['Cartly (sample)', 'Chirpwave (sample)'], influence: 3.8, adoption: 'Growing', updates: [{ when: 'Last month', text: 'Sample update: AI-suggested follow-up analyses.' }], up: 84, expert: [{ name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
-  { id: 't6', name: 'Figma', category: 'Design and prototyping', uses: ['Rapid wireframes', 'Prototype from prompt', 'Copy variants'], industries: ['Consumer Tech', 'Travel', 'Entertainment'], companies: ['Wayfound (sample)', 'Reelhouse (sample)'], influence: 3.1, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: prompt-to-prototype for simple flows.' }], up: 58, expert: [] },
-  { id: 't7', name: 'Perplexity', category: 'Research', uses: ['Market scans', 'Competitor facts with sources', 'Quick due diligence'], industries: ['FinTech', 'Travel', 'SaaS'], companies: ['Wayfound (sample)'], influence: 3.0, adoption: 'Growing', updates: [{ when: 'Last week', text: 'Sample update: deeper multi-step research mode.' }], up: 63, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }] },
-  { id: 't8', name: 'Jira AI features', category: 'Delivery', uses: ['Ticket drafting', 'Backlog dedupe', 'Sprint summaries'], industries: ['SaaS', 'FinTech', 'Communication'], companies: ['Tasklane (sample)', 'Hushline (sample)'], influence: 2.7, adoption: 'Early', updates: [{ when: 'This month', text: 'Sample update: ticket breakdown suggestions.' }], up: 39, expert: [] },
+  { id: 't1', name: 'ChatGPT', topics: ['product-sense','strategy'], category: 'General assistant', uses: ['Drafting PRDs', 'Brainstorming options', 'Summarising research'], industries: ['SaaS', 'E-commerce', 'Consumer Tech', 'EdTech'], companies: ['Tasklane (sample)', 'Cartly (sample)'], influence: 4.3, adoption: 'Widely used', updates: [{ when: 'This week', text: 'Sample update: longer context for document analysis.' }], up: 188, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }, { name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
+  { id: 't2', name: 'Claude', topics: ['strategy','execution'], category: 'General assistant', uses: ['Long-document synthesis', 'Spec review', 'Competitor research'], industries: ['SaaS', 'FinTech', 'HealthTech'], companies: ['Northwind Pay (sample)', 'Pulse Clinic (sample)'], influence: 4.2, adoption: 'Widely used', updates: [{ when: 'Last week', text: 'Sample update: improved handling of large files.' }], up: 164, expert: [{ name: 'Meera Iyer', role: 'Senior PM, Payments', vote: 1 }] },
+  { id: 't3', name: 'Notion AI', topics: ['execution'], category: 'Docs and specs', uses: ['Meeting notes to action items', 'Spec first drafts', 'Wiki Q&A'], industries: ['SaaS', 'Communication'], companies: ['Hushline (sample)'], influence: 3.4, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: Q&A across workspace pages.' }], up: 92, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
+  { id: 't4', name: 'Dovetail', topics: ['product-sense'], category: 'Research synthesis', uses: ['Tagging interview transcripts', 'Theme clustering', 'Insight reports'], industries: ['EdTech', 'HealthTech', 'Consumer Tech'], companies: ['Lumina Learn (sample)'], influence: 3.6, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: auto-generated highlight reels.' }], up: 71, expert: [{ name: 'Sana Rahman', role: 'Director of Product', vote: 1 }] },
+  { id: 't5', name: 'Amplitude', topics: ['metrics'], category: 'Analytics', uses: ['Natural-language chart questions', 'Anomaly alerts', 'Funnel diagnosis'], industries: ['E-commerce', 'FinTech', 'Social Media'], companies: ['Cartly (sample)', 'Chirpwave (sample)'], influence: 3.8, adoption: 'Growing', updates: [{ when: 'Last month', text: 'Sample update: AI-suggested follow-up analyses.' }], up: 84, expert: [{ name: 'Daniel Okafor', role: 'Group PM, Growth', vote: 1 }] },
+  { id: 't6', name: 'Figma', topics: ['product-sense'], category: 'Design and prototyping', uses: ['Rapid wireframes', 'Prototype from prompt', 'Copy variants'], industries: ['Consumer Tech', 'Travel', 'Entertainment'], companies: ['Wayfound (sample)', 'Reelhouse (sample)'], influence: 3.1, adoption: 'Growing', updates: [{ when: 'This month', text: 'Sample update: prompt-to-prototype for simple flows.' }], up: 58, expert: [] },
+  { id: 't7', name: 'Perplexity', topics: ['strategy','metrics'], category: 'Research', uses: ['Market scans', 'Competitor facts with sources', 'Quick due diligence'], industries: ['FinTech', 'Travel', 'SaaS'], companies: ['Wayfound (sample)'], influence: 3.0, adoption: 'Growing', updates: [{ when: 'Last week', text: 'Sample update: deeper multi-step research mode.' }], up: 63, expert: [{ name: 'Tomás Beltrán', role: 'Product Lead, AI', vote: 1 }] },
+  { id: 't8', name: 'Jira AI features', topics: ['execution'], category: 'Delivery', uses: ['Ticket drafting', 'Backlog dedupe', 'Sprint summaries'], industries: ['SaaS', 'FinTech', 'Communication'], companies: ['Tasklane (sample)', 'Hushline (sample)'], influence: 2.7, adoption: 'Early', updates: [{ when: 'This month', text: 'Sample update: ticket breakdown suggestions.' }], up: 39, expert: [] },
 ]
 
 export const SAMPLE_AUDIO_TRANSCRIPT = [
@@ -225,3 +225,41 @@ export function seedInterviews() {
     mk('s1', 'product-sense', 'medium', 'APM', 21, [3.5, 3, 3.5, 3, 4], 3.4),
   ]
 }
+
+// Suggested questions a peer can use when they play interviewer in a mock (SCRUM-17). Fictional sample content.
+export const MOCK_QUESTIONS = {
+  'product-sense': [
+    'Pick an app you used this week. Who is it NOT built for, and how would you improve it for that group anyway?',
+    'Our sign-up completion is fine but week-1 retention is low. Which user problem would you look for first?',
+    'If you could only build one feature for new users this quarter, what would it be and why?',
+    'How would you decide between two improvements that help different user segments?',
+  ],
+  execution: [
+    'Engineering says your launch will take eight weeks and you promised six. Walk me through your next day.',
+    'Halfway through a sprint, leadership adds a must-do request. What do you do?',
+    'A launch went out with a known minor bug. How do you decide whether to roll back?',
+    'How do you keep a cross-functional team unblocked when design is a week behind?',
+  ],
+  metrics: [
+    'Daily active users dropped 8% week over week. How do you figure out what happened?',
+    'Pick a product you know. What is its north star metric, and what guardrail would you watch?',
+    'An experiment shows sign-ups up 3% but support tickets up 20%. Ship or not?',
+    'How would you tell a real metric drop from normal weekly noise?',
+  ],
+  strategy: [
+    'A well-funded competitor just copied your core feature. What changes in your plan?',
+    'Should we enter the enterprise segment next year? Argue both sides.',
+    'What would have to be true for a free tier to be a bad idea for us?',
+    'Where does this product sit in three years, and what gets it there?',
+  ],
+  behavioral: [
+    'Tell me about a time you pushed a decision forward without full agreement.',
+    'Tell me about a time you were wrong about a product call. What changed after?',
+    'Describe a conflict with an engineer or designer. What was your specific role in resolving it?',
+    'Tell me about the hardest feedback you received and what you did with it.',
+  ],
+}
+
+// Daily practice (SCRUM-20): five topics a day across the interview categories, bonus AI-tools topic after all five.
+export const DAILY_TOPIC_XP = 20
+export const DAILY_BONUS = { id: 'ai-tools-explorer', title: 'PM AI tools explorer', text: 'Bonus topic: explore the AI tools PMs actually use, and how much they change the work.' }

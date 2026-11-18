@@ -14,6 +14,7 @@ import Settings from './pages/Settings'
 import VerifyEmail from './pages/VerifyEmail'
 import { VoiceTest, AiTest } from './pages/Sandbox'
 import Experiences from './options/Experiences'
+import Daily from './options/Daily'
 import PeerMocks from './options/PeerMocks'
 import Roadmap from './options/Roadmap'
 import AiTools from './options/AiTools'
@@ -53,6 +54,7 @@ function Shell() {
           <NavLink to="/interview/setup">New interview</NavLink>
           <NavLink to="/history">History</NavLink>
           <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/daily">Daily practice</NavLink>
           <div className="nav-group">Experiences</div>
           <NavLink to="/experiences">Interview experiences</NavLink>
           <NavLink to="/peer-mocks">Peer mock interviews</NavLink>
@@ -100,6 +102,7 @@ export default function App() {
           <Route element={<Private />}>
             <Route path="/home" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/daily" element={<Daily />} />
             <Route path="/history" element={<History />} />
             <Route path="/history/:id" element={<Report />} />
             <Route path="/settings" element={<Settings />} />

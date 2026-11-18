@@ -4,7 +4,7 @@ import { Empty, ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad, u
 
 type Peer = { id: string; name: string; level: string; focus: string[]; bio: string; availability: string[]; overlap: string[] }
 type Booking = { id: string; peerId: string; peerName: string; slot: string; focus: string; status: string; feedbackGiven: null | { structure: number; depth: number; communication: number; comment: string } }
-type Data = { days: string[]; hours: number[]; mine: string[]; peers: Peer[]; bookings: Booking[] }
+type Data = { days: string[]; hours: number[]; mine: string[]; peers: Peer[]; bookings: Booking[]; questionBank: Record<string, string[]> }
 const hr = (h: number) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`
 const dayLabel = (d: string) => new Date(d + 'T00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })
 const slotLabel = (s: string) => { const [d, h] = s.split('@'); return `${new Date(d + 'T00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}, ${hr(Number(h))}` }
@@ -57,19 +57,27 @@ export default function PeerMocks() {
         <section className="card stack">
           <h2>Your sessions</h2>
           {upcoming.length === 0 ? <p className="muted">No sessions booked yet.</p> : upcoming.map((b) => (
-            <div key={b.id} className="row between" style={{ borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-              <div><b>{b.peerName}</b> · {CATEGORY_LABELS[b.focus]}<div className="small muted">{slotLabel(b.slot)}</div></div>
-              {b.status === 'done' && b.feedbackGiven ? <span className="pill ok">Feedback sent</span> : <div className="row"><button className="btn sm" onClick={() => setFb(b)}>Finish and give feedback</button><button className="btn sm ghost" onClick={() => post(`/bookings/${b.id}/cancel`).then(() => { toast('Session cancelled'); reload() })}>Cancel</button></div>}
+            <div key={b.id} style={{ borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
+              <div className="row between">
+                <div><b>{b.peerName}</b> · {CATEGORY_LABELS[b.focus]}<div className="small muted">{slotLabel(b.slot)}</div></div>
+                {b.status === 'done' && b.feedbackGiven ? <span className="pill ok">Feedback sent</span> : <div className="row"><button className="btn sm" onClick={() => setFb(b)}>Finish and give feedback</button><button className="btn sm ghost" onClick={() => post(`/bookings/${b.id}/cancel`).then(() => { toast('Session cancelled'); reload() })}>Cancel</button></div>}
+              </div>
+              {data.questionBank?.[b.focus] && (
+                <details className="small" style={{ marginTop: 6 }}>
+                  <summary style={{ cursor: 'pointer' }}>Suggested questions for this mock (sample)</summary>
+                  <ul className="list-plain" style={{ marginTop: 6 }}>{data.questionBank[b.focus].map((q, i) => <li key={i}>{q}</li>)}</ul>
+                </details>
+              )}
             </div>))}
         </section>
       </div>
-      {book && <BookModal peer={book} onClose={() => setBook(null)} onDone={() => { setBook(null); toast('Session confirmed'); reload() }} />}
+      {book && <BookModal peer={book} questionBank={data.questionBank} onClose={() => setBook(null)} onDone={() => { setBook(null); toast('Session confirmed'); reload() }} />}
       {fb && <FeedbackModal b={fb} onClose={() => setFb(null)} onDone={() => { setFb(null); toast('Feedback sent'); reload() }} />}
     </>
   )
 }
 
-function BookModal({ peer, onClose, onDone }: { peer: Peer; onClose: () => void; onDone: () => void }) {
+function BookModal({ peer, questionBank, onClose, onDone }: { peer: Peer; questionBank: Record<string, string[]>; onClose: () => void; onDone: () => void }) {
   const [slot, setSlot] = useState(peer.overlap[0])
   const [focus, setFocus] = useState(peer.focus[0])
   const save = useAction(async () => { await post('/bookings', { peerId: peer.id, slot, focus }); onDone() })
@@ -77,6 +85,12 @@ function BookModal({ peer, onClose, onDone }: { peer: Peer; onClose: () => void;
     <Modal title={`Mock interview with ${peer.name}`} onClose={onClose}>
       <label className="field">When<select value={slot} onChange={(e) => setSlot(e.target.value)}>{peer.overlap.map((s) => <option key={s} value={s}>{slotLabel(s)}</option>)}</select></label>
       <label className="field">Practise<select value={focus} onChange={(e) => setFocus(e.target.value)}>{peer.focus.map((f) => <option key={f} value={f}>{CATEGORY_LABELS[f]}</option>)}</select></label>
+      {questionBank?.[focus] && (
+        <div className="small">
+          <span className="muted">Suggested questions for whoever plays interviewer (sample):</span>
+          <ul className="list-plain" style={{ marginTop: 6 }}>{questionBank[focus].map((q, i) => <li key={i}>{q}</li>)}</ul>
+        </div>
+      )}
       <p className="small muted">You take turns: 20 minutes each way, then 10 minutes of feedback. A call link would be shared here in the real product.</p>
       <ErrorBox error={save.error} />
       <div className="row"><button className="btn" disabled={save.busy} onClick={() => save.run()}>Confirm session</button><button className="btn ghost" onClick={onClose}>Cancel</button></div>

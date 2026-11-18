@@ -4,6 +4,32 @@ What was actually changed, tested and decided, per working session. Jira tracks 
 
 ---
 
+## 2026-11-18 — Remaining prototype tickets (SCRUM-16, SCRUM-17, SCRUM-18, SCRUM-19, SCRUM-20) + docs (SCRUM-12, SCRUM-13, SCRUM-21, SCRUM-22)
+
+**What changed**
+- Daily practice page (/daily) for SCRUM-20: five daily topics across the interview categories, streak/XP/XP-today sample state, bonus "PM AI tools explorer" topic that unlocks after the daily five (Oct 10 call direction), "Practise this topic" deep links into interview setup. Navigation: under the Practice group in the menu. Dashboard shows a compact daily-practice card (streak, XP, topics done) linking to /daily. Sample state lives in the mock backend per user, labelled sample.
+- Peer mock interviews (SCRUM-17): the mock backend now serves a sample question bank per category; suggested questions for whoever plays interviewer show in the booking modal and on each booked session (expandable).
+- Interview experiences (SCRUM-16): company/role search box added next to the industry and round filters.
+- Roadmap (SCRUM-18): plan weeks now show real date ranges computed from today ("Week 1 · 18 Nov – 24 Nov") and each week gets a milestone line naming the areas to cover by the week's end date.
+- PM AI tools in the journey (SCRUM-19): sample tools are tagged to roadmap topics in the seed data; the roadmap plan shows "AI tools for your plan topics", the directory shows matching tools when a topic filter is selected, and each AI tool card links back to its roadmap topic.
+- New docs/ folder: personas-jtbd.md (SCRUM-12), dropped-ideas.md (SCRUM-13), storage-options.md (SCRUM-21, comparison only, no selection), login-decision.md (SCRUM-22, options framed, decision pending).
+
+**Tested**
+- `npx tsc --noEmit` clean; `npm run build` clean; `npm run test:api` (mock backend smoke) passed.
+- Scripted headless-Chrome run over the changed pages (daily practice, peer mocks, experiences, roadmap, AI tools, dashboard) with zero JS errors; screenshots visually inspected.
+
+**Decisions**
+- Gamification state is sample/demo state in the mock backend, not tied to real accounts - matches SCRUM-20's "sample state only" scope.
+- SCRUM-22 (login) and SCRUM-21 (storage) documented as options/comparison only; the product decisions themselves stay with the owner and team.
+
+**Blockers / open**
+- SCRUM-22 needs the owner's decision recorded; SCRUM-23 (team Jira access) is team-side.
+
+**Review**
+- Branch preview updates after push; link is the stable branch URL shared on WhatsApp.
+
+---
+
 ## 2026-11-16 — Three-pillar prototype rework (SCRUM-11, SCRUM-14, SCRUM-15, SCRUM-24, SCRUM-25)
 
 **What changed**

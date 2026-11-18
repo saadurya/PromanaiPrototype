@@ -3,16 +3,32 @@ import { CATEGORY_LABELS, fmtDate, get, type Session, type Storage } from '../ap
 import { Empty, ErrorBox, Meter, PageHead, Spinner, useLoad } from '../ui'
 
 type Gap = { area: string; label: string; score: number | null }
+type DailySummary = { doneCount: number; topics: unknown[]; streakDays: number; xp: number }
 
 export default function Dashboard() {
   const list = useLoad(() => get<{ interviews: Session[]; storage: Storage }>('/interviews'))
   const gapsLoad = useLoad(() => get<{ gaps: Gap[] }>('/resources'))
+  const dailyLoad = useLoad(() => get<DailySummary>('/daily'))
   const recent = list.data?.interviews.slice(0, 5) ?? []
   const gaps = gapsLoad.data?.gaps ?? []
+  const daily = dailyLoad.data
   return (
     <>
       <PageHead title="Dashboard" sub="Your past sessions, feedback and progress in one place." sample />
       <div className="grid2">
+        <section className="card stack">
+          <div className="row between"><h2>Daily practice</h2><span className="sample-chip">Sample</span></div>
+          {dailyLoad.loading ? <Spinner /> : !daily ? <ErrorBox error={dailyLoad.error} onRetry={dailyLoad.reload} /> : (
+            <>
+              <div className="row">
+                <span className="pill lime">{daily.streakDays}-day streak</span>
+                <span className="pill">{daily.xp} XP</span>
+                <span className="pill line">{daily.doneCount}/{daily.topics.length} topics today</span>
+              </div>
+              <Link className="btn ghost sm" style={{ justifySelf: 'start' }} to="/daily">Open today's five topics</Link>
+            </>
+          )}
+        </section>
         <section className="card stack">
           <div className="row between"><h2>Recent interviews</h2><Link to="/history">See all</Link></div>
           {list.loading ? <Spinner /> : list.error ? <ErrorBox error={list.error} onRetry={list.reload} /> : recent.length === 0 ? (

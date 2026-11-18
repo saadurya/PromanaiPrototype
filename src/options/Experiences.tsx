@@ -22,9 +22,9 @@ export default function Experiences() {
   const { data, loading, error, reload } = useLoad(() => get<{ experiences: Exp[] }>('/experiences'))
   const [view, setView] = useState<'library' | 'share'>('library')
   const [openId, setOpenId] = useState<string | null>(null)
-  const [fi, setFi] = useState(''); const [fr, setFr] = useState('')
+  const [fi, setFi] = useState(''); const [fr, setFr] = useState(''); const [q, setQ] = useState('')
   const [review, setReview] = useState(false)
-  const list = useMemo(() => (data?.experiences ?? []).filter((e) => (!fi || e.industry === fi) && (!fr || e.round === fr)), [data, fi, fr])
+  const list = useMemo(() => (data?.experiences ?? []).filter((e) => (!fi || e.industry === fi) && (!fr || e.round === fr) && (!q || (e.company + ' ' + e.role).toLowerCase().includes(q.toLowerCase()))), [data, fi, fr, q])
   const open = data?.experiences.find((e) => e.id === openId)
   const helpful = useAction(async (id: string) => { await post(`/experiences/${id}/helpful`); reload() })
   return (
@@ -34,6 +34,7 @@ export default function Experiences() {
       {view === 'share' ? <Share onDone={() => { reload(); setView('library') }} /> : (<>
         {loading && <Spinner />}<ErrorBox error={error} onRetry={reload} />
         <div className="row" style={{ marginBottom: 16 }}>
+          <input aria-label="Search company or role" placeholder="Search company or role" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 200 }} />
           <select aria-label="Industry" value={fi} onChange={(e) => setFi(e.target.value)} style={{ width: 'auto' }}><option value="">All industries</option>{INDUSTRIES.map((i) => <option key={i}>{i}</option>)}</select>
           <select aria-label="Round" value={fr} onChange={(e) => setFr(e.target.value)} style={{ width: 'auto' }}><option value="">All rounds</option>{ROUNDS.map((i) => <option key={i}>{i}</option>)}</select>
         </div>

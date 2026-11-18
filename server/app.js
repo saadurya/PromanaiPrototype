@@ -40,6 +40,8 @@ const userState = () => ({
   resourceVotes: {},
   toolVotes: {},
   experienceHelpful: new Set(),
+  // Daily practice (SCRUM-20): sample engagement state. Starts with a small streak/XP so the mechanics are visible.
+  daily: { date: null, done: [], xp: 320, xpToday: 0, streakDays: 4, lastAllDone: null },
   flags: { busyNext: false, feedbackFailNext: false },
   hits: { engine: [], feedback: [], draft: [], verify: [] },
 })
@@ -373,6 +375,22 @@ export function createCore(opts = {}) {
     const overlap = p.availability.filter((s) => c.st.myAvailability.has(s))
     return { id: p.id, name: p.name, level: p.level, focus: p.focus, bio: p.bio, availability: p.availability, overlap }
   }
+  // Daily practice (SCRUM-20): five topics across the interview categories; finishing all five unlocks the bonus AI-tools topic.
+  const DAILY_TOPICS = Object.keys(S.CATEGORIES).map((k) => ({ id: k, category: k, xp: S.DAILY_TOPIC_XP }))
+  const todayKey = () => new Date().toISOString().slice(0, 10)
+  const dailyView = (c) => {
+    const d = c.st.daily
+    const today = todayKey()
+    if (d.date !== today) { d.date = today; d.done = []; d.xpToday = 0 } // a new day resets today's five; streak/XP carry over
+    const doneCount = DAILY_TOPICS.filter((t) => d.done.includes(t.id)).length
+    return {
+      date: today,
+      topics: DAILY_TOPICS.map((t) => ({ ...t, label: S.CATEGORIES[t.category].label, done: d.done.includes(t.id) })),
+      doneCount,
+      bonus: { ...S.DAILY_BONUS, unlocked: doneCount === DAILY_TOPICS.length },
+      streakDays: d.streakDays, xp: d.xp, xpToday: d.xpToday,
+    }
+  }
   const toolView = (c, t) => {
     const reports = db.toolReports[t.id] || []
     const infl = reports.length ? Math.round(((t.influence * 5 + reports.reduce((n, r) => n + r.impact, 0)) / (5 + reports.length)) * 10) / 10 : t.influence
@@ -524,7 +542,17 @@ export function createCore(opts = {}) {
   })
 
   // Option 3: peer mocks
-  on('GET', '/api/peers', (b, c) => ({ body: { days: days(), hours: S.SLOT_HOURS, mine: [...c.st.myAvailability], peers: S.PEERS.map((p) => peerView(c, p)), bookings: c.st.bookings } }))
+  on('GET', '/api/peers', (b, c) => ({ body: { days: days(), hours: S.SLOT_HOURS, mine: [...c.st.myAvailability], peers: S.PEERS.map((p) => peerView(c, p)), bookings: c.st.bookings, questionBank: S.MOCK_QUESTIONS } }))
+  on('GET', '/api/daily', (b, c) => ({ body: dailyView(c) }))
+  on('POST', '/api/daily/topics/:id/complete', (b, c, id) => {
+    const t = DAILY_TOPICS.find((x) => x.id === id)
+    if (!t) return err(404, 'not_found', 'Unknown topic.')
+    dailyView(c) // roll over to today first, so a stale day never double-counts
+    const d = c.st.daily
+    if (!d.done.includes(id)) { d.done.push(id); d.xp += t.xp; d.xpToday += t.xp }
+    if (DAILY_TOPICS.every((x) => d.done.includes(x.id)) && d.lastAllDone !== d.date) { d.streakDays += 1; d.lastAllDone = d.date }
+    return { body: dailyView(c) }
+  })
   on('PUT', '/api/availability', (b, c) => {
     const valid = new Set(days().flatMap((d) => S.SLOT_HOURS.map((h) => `${d}@${h}`)))
     c.st.myAvailability = new Set((b.slots || []).filter((s) => valid.has(s)))
