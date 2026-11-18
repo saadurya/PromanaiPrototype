@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CATEGORY_LABELS, get, api, post } from '../api'
 import { Empty, ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad, useToast } from '../ui'
 
@@ -12,6 +12,8 @@ const slotLabel = (s: string) => { const [d, h] = s.split('@'); return `${new Da
 
 export default function PeerMocks() {
   const { data, setData, loading, error, reload } = useLoad(() => get<Data>('/peers'))
+  const [params] = useSearchParams()
+  const fromDaily = params.get('from') === 'daily'
   const toast = useToast()
   const [book, setBook] = useState<Peer | null>(null)
   const [fb, setFb] = useState<Booking | null>(null)
@@ -75,6 +77,7 @@ export default function PeerMocks() {
           <h2>Where next?</h2>
           <p className="small muted">Whether a mock is booked, finished or still waiting on feedback, you can move on from here - nothing on this page is a dead end.</p>
           <div className="row" style={{ flexWrap: 'wrap' }}>
+            {fromDaily && <Link className="btn ghost" to="/daily/peer">Back to peer practice</Link>}
             <Link className="btn lime" to="/dashboard">Go to Dashboard</Link>
             <Link className="btn ghost" to="/daily">Daily practice</Link>
             <Link className="btn ghost" to="/interview/setup">New AI interview</Link>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { get, post } from '../api'
 import { Empty, ErrorBox, Modal, PageHead, Spinner, Stars, useAction, useLoad } from '../ui'
 
@@ -11,15 +11,18 @@ const ROUNDS = ['Product sense', 'Execution', 'Metrics', 'Strategy', 'Behavioral
 // Connector: turn a shared experience into a practice interview with the same round and industry.
 const ROUND_TO_CATEGORY: Record<string, string> = { 'Product sense': 'product-sense', Execution: 'execution', Metrics: 'metrics', Strategy: 'strategy', Behavioral: 'behavioral' }
 const INDUSTRY_TO_ID: Record<string, string> = { FinTech: 'fintech', 'E-commerce': 'ecommerce', EdTech: 'edtech', HealthTech: 'healthtech', SaaS: 'saas', 'Consumer Tech': 'consumer', 'Social Media': 'social', Entertainment: 'entertainment', Travel: 'travel', Communication: 'communication' }
-const practiceLink = (e: { round: string; industry: string }) => {
+const practiceLink = (e: { round: string; industry: string }, fromDaily = false) => {
   const q = new URLSearchParams()
   if (ROUND_TO_CATEGORY[e.round]) q.set('category', ROUND_TO_CATEGORY[e.round])
   if (INDUSTRY_TO_ID[e.industry]) q.set('industry', INDUSTRY_TO_ID[e.industry])
+  if (fromDaily) q.set('from', 'daily')
   return `/interview/setup?${q.toString()}`
 }
 
 export default function Experiences() {
   const { data, loading, error, reload } = useLoad(() => get<{ experiences: Exp[] }>('/experiences'))
+  const [params] = useSearchParams()
+  const fromDaily = params.get('from') === 'daily'
   const [view, setView] = useState<'library' | 'share'>('library')
   const [openId, setOpenId] = useState<string | null>(null)
   const [fi, setFi] = useState(''); const [fr, setFr] = useState(''); const [q, setQ] = useState('')
@@ -55,7 +58,7 @@ export default function Experiences() {
               <section className="card stack">
                 <div className="row between"><div><h2>{open.company}</h2><p className="muted small">{open.role} · {open.industry} · {open.round} round · shared by {open.author}</p></div>
                   <button className={'btn sm' + (open.helpedByMe ? '' : ' ghost')} onClick={() => helpful.run(open.id)}>{open.helpedByMe ? 'Marked helpful' : 'This helped me'}</button></div>
-                <div className="row"><Link className="btn sm lime" to={practiceLink(open)}>Practise a {open.round} interview in {open.industry}</Link></div>
+                <div className="row"><Link className="btn sm lime" to={practiceLink(open, fromDaily)}>Practise a {open.round} interview in {open.industry}</Link></div>
                 <div>{open.turns.map((t, i) => <div key={i} className={'turn' + (t.speaker === 'candidate' ? ' cand' : '')}><span className="who">{t.speaker === 'interviewer' ? 'Interviewer' : 'Candidate'}</span><div>{t.text}{t.note && <div className="note-tag">{t.note}</div>}</div></div>)}</div>
                 <div className="row between"><h3>Expert evaluation</h3><button className="btn sm ghost" onClick={() => setReview(true)}>Rank this as an expert</button></div>
                 {open.reviews.length === 0 && <p className="muted">No expert has ranked this yet.</p>}
@@ -71,11 +74,19 @@ export default function Experiences() {
           </div>
         </div>
         {review && open && <ReviewModal exp={open} onClose={() => setReview(false)} onDone={() => { setReview(false); reload() }} />}
-        <section className="card stack" style={{ marginTop: 18 }}>
-          <h2>What next</h2>
-          <p className="small muted">Take what these rounds teach into your own plan, or put it into practice with a peer.</p>
-          <div className="row"><Link className="btn" to="/roadmap">Build your learning plan</Link><Link className="btn ghost" to="/peer-mocks">Peer to peer</Link></div>
-        </section>
+        {fromDaily ? (
+          <section className="card stack" style={{ marginTop: 18 }}>
+            <h2>Daily practice</h2>
+            <p className="small muted">You're browsing interview experiences, the first step of today's practice. Move back or continue the flow from here.</p>
+            <div className="row"><Link className="btn ghost" to="/daily">Previous: daily practice</Link><Link className="btn lime" to="/daily/plan">What's next: your learning plan</Link></div>
+          </section>
+        ) : (
+          <section className="card stack" style={{ marginTop: 18 }}>
+            <h2>What next</h2>
+            <p className="small muted">Take what these rounds teach into your own plan, or put it into practice with a peer.</p>
+            <div className="row"><Link className="btn" to="/roadmap">Build your learning plan</Link><Link className="btn ghost" to="/peer-mocks">Peer to peer</Link></div>
+          </section>
+        )}
       </>)}
     </>
   )

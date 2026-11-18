@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { CATEGORY_LABELS, engine, get, post, type Session } from '../api'
-import { ErrorBox, PageHead, Spinner, useAction, useLoad } from '../ui'
+import { CATEGORY_LABELS, engine, get, type Session } from '../api'
+import { ErrorBox, PageHead, Spinner, useLoad } from '../ui'
 import Roadmap from './Roadmap'
 
 type Topic = { id: string; category: string; label: string; xp: number; done: boolean }
@@ -22,25 +22,29 @@ const practiceLink = (e: { round: string; industry: string }) => {
   const q = new URLSearchParams()
   if (ROUND_TO_CATEGORY[e.round]) q.set('category', ROUND_TO_CATEGORY[e.round])
   if (INDUSTRY_TO_ID[e.industry]) q.set('industry', INDUSTRY_TO_ID[e.industry])
+  q.set('from', 'daily')
   return `/interview/setup?${q.toString()}`
 }
 
 // Every daily step is optional: Next continues to the next page, Skip moves on without doing this one.
-function StepNav({ next, endLabel }: { next?: string; endLabel?: string }) {
+function StepNav({ next, prev, endLabel }: { next?: string; prev?: string; endLabel?: string }) {
   return (
     <div className="row between" style={{ flexWrap: 'wrap' }}>
       <span className="row">
         <span className="small muted">Every step is optional - skip whatever you don't need today.</span>
         <Link className="btn ghost sm" to="/dashboard">Exit to Dashboard</Link>
       </span>
-      {next ? (
-        <span className="row">
-          <Link className="btn ghost" to={next}>Skip</Link>
-          <Link className="btn lime" to={next}>Next</Link>
-        </span>
-      ) : (
-        <Link className="btn lime" to="/dashboard">{endLabel ?? 'Done · Go to Dashboard'}</Link>
-      )}
+      <span className="row">
+        {prev && <Link className="btn ghost" to={prev}>Previous</Link>}
+        {next ? (
+          <>
+            <Link className="btn ghost" to={next}>Skip</Link>
+            <Link className="btn lime" to={next}>Next</Link>
+          </>
+        ) : (
+          <Link className="btn lime" to="/dashboard">{endLabel ?? 'Done · Go to Dashboard'}</Link>
+        )}
+      </span>
     </div>
   )
 }
@@ -67,7 +71,7 @@ export function DailyExperiences() {
                 <p className="small muted">{e.role} · {e.industry} · {e.round}</p>
                 <p className="small">{e.summary}</p>
                 <div className="row">
-                  <Link className="btn sm" to="/experiences">Read the round</Link>
+                  <Link className="btn sm" to="/experiences?from=daily">Read the round</Link>
                   <Link className="btn sm ghost" to={practiceLink(e)}>Practise this round</Link>
                 </div>
               </div>
@@ -75,8 +79,8 @@ export function DailyExperiences() {
           </div>
         )}
         <div className="row">
-          <Link className="btn" to="/experiences">Browse all experiences</Link>
-          <Link className="btn ghost" to="/experiences">Share yours</Link>
+          <Link className="btn" to="/experiences?from=daily">Browse all experiences</Link>
+          <Link className="btn ghost" to="/experiences?from=daily">Share yours</Link>
         </div>
         <StepNav next="/daily/plan" />
       </div>
@@ -89,36 +93,33 @@ export function DailyPlan() {
   return (
     <>
       <Roadmap />
-      <div style={{ marginTop: 18 }}><StepNav next="/daily/topics" /></div>
+      <div style={{ marginTop: 18 }}><StepNav prev="/daily" next="/daily/topics" /></div>
     </>
   )
 }
 
 // Page 3: today's five AI interview topics
 export function DailyTopics() {
-  const { data, setData, loading, error, reload } = useLoad(() => get<Daily>('/daily'))
-  const complete = useAction(async (id: string) => { const r = await post<Daily>(`/daily/topics/${id}/complete`); setData(r) })
+  const { data, loading, error, reload } = useLoad(() => get<Daily>('/daily'))
   if (loading && !data) return <Spinner />
   if (!data) return <ErrorBox error={error} onRetry={reload} />
   return (
     <>
-      <PageHead title="Daily practice" sub="Today's five AI interview topics, across the interview categories. Practise any of them with the interviewer - your streak, XP and progress show on the Dashboard." />
+      <PageHead title="Daily practice" sub="Today's five AI interview topics, across the interview categories. Finishing a topic's practice interview marks it done and earns its XP - your streak, XP and progress show on the Dashboard." />
       <div className="stack lg">
         <ActiveBanner />
-        <ErrorBox error={complete.error} />
         <div className="grid2">
           {data.topics.map((t) => (
             <div key={t.id} className="card stack">
               <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
               <div className="row">
-                <Link className="btn sm lime" to={`/interview/setup?category=${t.category}&from=daily`}>Practise this topic</Link>
-                {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
+                {!t.done ? <Link className="btn sm lime" to={`/interview/setup?category=${t.category}&from=daily`}>Practise this topic</Link> : <span className="small muted">Finished in today's practice interview</span>}
               </div>
             </div>
           ))}
         </div>
         <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>Ready to try it out with peer-to-peer interviews?</b> That's the last step - finishing a peer mock completes the whole practice flow.</span></div>
-        <StepNav next="/daily/peer" />
+        <StepNav prev="/daily/plan" next="/daily/peer" />
       </div>
     </>
   )
@@ -150,9 +151,9 @@ export function DailyPeer() {
           </div>
         )}
         <div className="row">
-          <Link className="btn" to="/peer-mocks">Mark your availability</Link>
+          <Link className="btn" to="/peer-mocks?from=daily">Mark your availability</Link>
         </div>
-        <StepNav endLabel={peers.data?.bookings.some((b) => b.status === 'done') ? 'Done · Go to Dashboard' : 'Back to Dashboard'} />
+        <StepNav prev="/daily/topics" endLabel={peers.data?.bookings.some((b) => b.status === 'done') ? 'Done · Go to Dashboard' : 'Back to Dashboard'} />
       </div>
     </>
   )

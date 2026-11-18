@@ -111,17 +111,18 @@ export function createCore(opts = {}) {
   const lastQuestion = (i) => [...i.messages].reverse().find((m) => m.role === 'interviewer')
 
   // Server-side clock. Charges elapsed time since last tick, capped per gap.
-  function charge(i) {
+  function charge(i, c) {
     const now = Date.now()
     const gap = Math.min(now - (i.last_tick || now), MAX_GAP_MS)
     i.timer_remaining_ms = Math.max(0, i.timer_remaining_ms - gap)
     i.last_tick = now
-    if (i.timer_remaining_ms === 0 && i.status === 'in_progress') finish(i, 'time_up')
+    if (i.timer_remaining_ms === 0 && i.status === 'in_progress') finish(i, 'time_up', c)
   }
-  function finish(i, reason) {
+  function finish(i, reason, c) {
     i.status = 'completed'
     i.end_reason = reason
     i.feedback_status = 'none'
+    if (c && i.origin === 'daily') completeDailyTopic(c, i.category)
     // An answer still being worked on is kept in the transcript but marked unsubmitted, so it is never scored.
     if (i.draft?.text && i.messages.at(-1)?.role === 'interviewer' && i.draft.for_seq === i.messages.at(-1).seq) addMsg(i, 'candidate', i.draft.text, { submitted: false })
     i.draft = null
@@ -176,7 +177,7 @@ export function createCore(opts = {}) {
     if (limited(c, 'engine')) return err(429, 'rate_limited', 'You are going too quickly. Wait a few seconds and try again.', true)
     if (a === 'status') {
       const i = active(c)
-      if (i) charge(i)
+      if (i) charge(i, c)
       const cur = active(c)
       return { body: { active: cur ? publicSession(cur) : null, storage: storage(c) } }
     }
@@ -198,10 +199,10 @@ export function createCore(opts = {}) {
     if (!i) return err(404, 'not_found', 'Interview not found.')
     if (i.status !== 'in_progress' && a !== 'resume') return err(409, 'not_running', 'This interview has ended.')
     if (a === 'resume' || a === 'heartbeat') {
-      charge(i)
+      charge(i, c)
       return { body: { session: publicSession(i), messages: a === 'resume' ? i.messages : undefined, draft: a === 'resume' ? i.draft : undefined } }
     }
-    charge(i)
+    charge(i, c)
     if (i.status !== 'in_progress') return { body: { session: publicSession(i), messages: i.messages, ended: true } }
     if (a === 'submit_answer') {
       const text = String(b.text || '').trim()
@@ -220,7 +221,7 @@ export function createCore(opts = {}) {
       if (c.st.flags.busyNext) { c.st.flags.busyNext = false; return err(429, 'ai_busy', 'The AI is busy or the free limit was reached. Your answer is saved. Try again.', true) }
       const m = addMsg(i, 'interviewer', nextQuestion(i))
       i.size_bytes = bytes(i)
-      charge(i)
+      charge(i, c)
       return { body: { session: publicSession(i), message: m } }
     }
     if (a === 'skip') {
@@ -237,7 +238,7 @@ export function createCore(opts = {}) {
     if (a === 'end') {
       // The browser sends its latest text with End so nothing typed since the last autosave is lost.
       if (typeof b.draft === 'string') storeDraft(i, b.draft, b.at)
-      finish(i, b.reason === 'time_up' ? 'time_up' : 'user_ended')
+      finish(i, b.reason === 'time_up' ? 'time_up' : 'user_ended', c)
       return { body: { session: publicSession(i), messages: i.messages } }
     }
     return err(400, 'unknown_action', 'Unknown action.')
@@ -255,7 +256,7 @@ export function createCore(opts = {}) {
     if (limited(c, 'draft')) return err(429, 'rate_limited', 'Autosave is going too quickly.', true)
     const i = findMine(c, b.id)
     if (!i) return err(404, 'not_found', 'Interview not found.')
-    charge(i)
+    charge(i, c)
     if (i.status !== 'in_progress') return { body: { session: publicSession(i), ended: true } }
     if (!storeDraft(i, b.text ?? '', b.at)) return err(409, 'out_of_order', 'There is no open question to answer.')
     return { body: { saved: true, timer_remaining_ms: i.timer_remaining_ms } }
@@ -378,6 +379,15 @@ export function createCore(opts = {}) {
   // Daily practice (SCRUM-20): five topics across the interview categories; finishing all five unlocks the bonus AI-tools topic.
   const DAILY_TOPICS = Object.keys(S.CATEGORIES).map((k) => ({ id: k, category: k, xp: S.DAILY_TOPIC_XP }))
   const todayKey = () => new Date().toISOString().slice(0, 10)
+  // Finishing a daily topic's AI practice interview is what marks the topic done and earns its XP - there is no self-mark button.
+  const completeDailyTopic = (c, category) => {
+    const t = DAILY_TOPICS.find((x) => x.category === category)
+    if (!t) return
+    dailyView(c) // roll over to today first, so a stale day never double-counts
+    const d = c.st.daily
+    if (!d.done.includes(t.id)) { d.done.push(t.id); d.xp += t.xp; d.xpToday += t.xp }
+    if (DAILY_TOPICS.every((x) => d.done.includes(x.id)) && d.lastAllDone !== d.date) { d.streakDays += 1; d.lastAllDone = d.date }
+  }
   const dailyView = (c) => {
     const d = c.st.daily
     const today = todayKey()
@@ -562,15 +572,6 @@ export function createCore(opts = {}) {
   // Option 3: peer mocks
   on('GET', '/api/peers', (b, c) => ({ body: { days: days(), hours: S.SLOT_HOURS, mine: [...c.st.myAvailability], peers: S.PEERS.map((p) => peerView(c, p)), bookings: c.st.bookings, questionBank: S.MOCK_QUESTIONS } }))
   on('GET', '/api/daily', (b, c) => ({ body: dailyView(c) }))
-  on('POST', '/api/daily/topics/:id/complete', (b, c, id) => {
-    const t = DAILY_TOPICS.find((x) => x.id === id)
-    if (!t) return err(404, 'not_found', 'Unknown topic.')
-    dailyView(c) // roll over to today first, so a stale day never double-counts
-    const d = c.st.daily
-    if (!d.done.includes(id)) { d.done.push(id); d.xp += t.xp; d.xpToday += t.xp }
-    if (DAILY_TOPICS.every((x) => d.done.includes(x.id)) && d.lastAllDone !== d.date) { d.streakDays += 1; d.lastAllDone = d.date }
-    return { body: dailyView(c) }
-  })
   on('PUT', '/api/availability', (b, c) => {
     const valid = new Set(days().flatMap((d) => S.SLOT_HOURS.map((h) => `${d}@${h}`)))
     c.st.myAvailability = new Set((b.slots || []).filter((s) => valid.has(s)))
