@@ -187,7 +187,7 @@ export function createCore(opts = {}) {
       const { level, category, difficulty, industry } = b
       if (!['APM', 'PM'].includes(level) || !S.CATEGORIES[category] || !['easy', 'medium', 'hard'].includes(difficulty)) return err(400, 'invalid_input', 'Choose a level, category and difficulty.')
       if (industry && !S.INDUSTRIES.some((x) => x.id === industry)) return err(400, 'invalid_input', 'Unknown industry.')
-      const i = { id: 'i' + rid(), owner_id: c.user.id, level, category, difficulty, industry: industry || null, status: 'in_progress', feedback_status: 'none', timer_remaining_ms: TOTAL_MS, skips_used: 0, end_reason: null, created_at: new Date().toISOString(), size_bytes: 0, rating: null, feedback_attempts: 0, messages: [], draft: null, last_tick: Date.now(), feedback: null }
+      const i = { id: 'i' + rid(), owner_id: c.user.id, level, category, difficulty, industry: industry || null, origin: b.origin === 'daily' ? 'daily' : null, status: 'in_progress', feedback_status: 'none', timer_remaining_ms: TOTAL_MS, skips_used: 0, end_reason: null, created_at: new Date().toISOString(), size_bytes: 0, rating: null, feedback_attempts: 0, messages: [], draft: null, last_tick: Date.now(), feedback: null }
       db.interviews.unshift(i)
       await sleep(700)
       const first = c.user.name.split(' ')[0]

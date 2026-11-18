@@ -26,7 +26,7 @@ const practiceLink = (e: { round: string; industry: string }) => {
 }
 
 // Every daily step is optional: Next continues to the next page, Skip moves on without doing this one.
-function StepNav({ next }: { next?: string }) {
+function StepNav({ next, endLabel }: { next?: string; endLabel?: string }) {
   return (
     <div className="row between" style={{ flexWrap: 'wrap' }}>
       <span className="small muted">Every step is optional - skip whatever you don't need today.</span>
@@ -36,7 +36,7 @@ function StepNav({ next }: { next?: string }) {
           <Link className="btn lime" to={next}>Next</Link>
         </span>
       ) : (
-        <Link className="btn lime" to="/dashboard">Done · Go to Dashboard</Link>
+        <Link className="btn lime" to="/dashboard">{endLabel ?? 'Done · Go to Dashboard'}</Link>
       )}
     </div>
   )
@@ -114,7 +114,7 @@ export function DailyTopics() {
             <div key={t.id} className="card stack">
               <div className="row between"><h3>{t.label}</h3>{t.done ? <span className="pill ok">Done · +{t.xp} XP</span> : <span className="pill">+{t.xp} XP</span>}</div>
               <div className="row">
-                <Link className="btn sm lime" to={`/interview/setup?category=${t.category}`}>Practise this topic</Link>
+                <Link className="btn sm lime" to={`/interview/setup?category=${t.category}&from=daily`}>Practise this topic</Link>
                 {!t.done && <button className="btn sm ghost" disabled={complete.busy} onClick={() => complete.run(t.id)}>Mark done</button>}
               </div>
             </div>
@@ -156,7 +156,7 @@ export function DailyPeer() {
         <div className="row">
           <Link className="btn" to="/peer-mocks">Mark your availability</Link>
         </div>
-        <StepNav />
+        <StepNav endLabel={peers.data?.bookings.some((b) => b.status === 'done') ? 'Done · Go to Dashboard' : 'Back to Dashboard'} />
       </div>
     </>
   )

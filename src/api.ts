@@ -52,7 +52,7 @@ export const clearAllDrafts = () => { try { Object.keys(localStorage).filter((k)
 export type User = { id: string; name: string; email: string; verified: boolean }
 export type Msg = { seq: number; role: 'interviewer' | 'candidate'; content: string; skipped: boolean; submitted: boolean }
 export type Storage = { used: number; limit: number; full: boolean }
-export type Session = { id: string; level: string; category: string; difficulty: string; industry: string | null; status: string; feedback_status: string; timer_remaining_ms: number; skips_used: number; end_reason: string | null; created_at: string; size_bytes: number; rating: { rating: number; comment: string } | null; has_feedback: boolean }
+export type Session = { id: string; level: string; category: string; difficulty: string; industry: string | null; origin?: 'daily' | null; status: string; feedback_status: string; timer_remaining_ms: number; skips_used: number; end_reason: string | null; created_at: string; size_bytes: number; rating: { rating: number; comment: string } | null; has_feedback: boolean }
 export type Feedback = { overall_score: number; explanation: string; competency_scores: { name: string; score: number; explanation: string }[]; strengths: string[]; improvement_areas: string[]; suggestions: string[]; model: string }
 
 export const CATEGORY_LABELS: Record<string, string> = { 'product-sense': 'Product Sense', execution: 'Execution', metrics: 'Metrics', strategy: 'Strategy', behavioral: 'Behavioral' }

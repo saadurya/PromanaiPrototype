@@ -91,7 +91,11 @@ export default function Report() {
         <section className="card stack"><h2>Transcript</h2>
           <div className="convo" style={{ maxHeight: 'none' }}>{messages.map((m) => <div key={m.seq} className={`msg ${m.role}${m.skipped ? ' skipped' : ''}${m.submitted === false ? ' unsent' : ''}`}><small>{m.role === 'interviewer' ? 'Interviewer' : m.submitted === false ? 'You · not submitted, not scored' : 'You'}</small>{m.content}</div>)}</div>
         </section>
-        {st === 'ready' && <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>What's next?</b> Keep the loop going or head back to your dashboard.</span><span className="row"><Link className="btn lime" to="/daily">Continue with Daily Practices</Link><Link className="btn ghost" to="/dashboard">Go to Dashboard</Link></span></div>}
+        {st === 'ready' && (s.origin === 'daily' ? (
+          <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>Ready to try it out with peer-to-peer interviews?</b> That's the last step - finishing a peer mock completes the whole practice flow.</span><span className="row"><Link className="btn lime" to="/daily/peer">Practise with a peer</Link><Link className="btn ghost" to="/dashboard">Go to Dashboard</Link></span></div>
+        ) : (
+          <div className="card row" style={{ flexWrap: 'wrap' }}><span><b>What's next?</b> Keep the loop going or head back to your dashboard.</span><span className="row"><Link className="btn lime" to="/daily">Continue with Daily Practices</Link><Link className="btn ghost" to="/dashboard">Go to Dashboard</Link></span></div>
+        ))}
       </div>
     </>
   )

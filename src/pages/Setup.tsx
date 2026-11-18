@@ -19,7 +19,7 @@ export default function Setup() {
   const inds = useLoad(() => get<{ industries: Ind[] }>('/industries'))
   useEffect(() => { const c = params.get('category'); if (c && CATEGORY_LABELS[c]) setCategory(c) }, [params])
   const selInd = inds.data?.industries.find((x) => x.id === industry)
-  const start = useAction(async () => { await engine({ action: 'start', level, category, difficulty, industry: industry || undefined }); nav('/interview/live', { replace: true, state: { fresh: true } }) })
+  const start = useAction(async () => { await engine({ action: 'start', level, category, difficulty, industry: industry || undefined, origin: params.get('from') === 'daily' ? 'daily' : undefined }); nav('/interview/live', { replace: true, state: { fresh: true } }) })
   const startErr = (start.error as { code?: string } | null)?.code
   const steps = ['Level', 'Industry', 'Focus', 'Confirm']
   return (
